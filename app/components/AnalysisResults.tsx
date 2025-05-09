@@ -13,10 +13,15 @@ import {
   ListItem, 
   ListItemText, 
   Paper, 
-  Typography 
+  Typography,
+  useTheme,
+  alpha
 } from '@mui/material';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, RadialLinearScale } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 ChartJS.register(ArcElement, Tooltip, Legend, RadialLinearScale);
 
@@ -50,6 +55,8 @@ interface AnalysisResultsProps {
 }
 
 export default function AnalysisResults({ results }: AnalysisResultsProps) {
+  const theme = useTheme();
+
   const radarChartData = {
     labels: ['面部分析', '声音分析', '心率分析', '整体健康'],
     datasets: [
@@ -61,115 +68,131 @@ export default function AnalysisResults({ results }: AnalysisResultsProps) {
           results.score.heartRateAnalysis.score,
           results.score.overallHealth.score
         ],
-        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
+        backgroundColor: alpha(theme.palette.primary.main, 0.2),
+        borderColor: theme.palette.primary.main,
+        borderWidth: 2,
+        pointBackgroundColor: theme.palette.primary.main,
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: theme.palette.primary.main,
       },
     ],
   };
 
-  // 获取评分平均值
-  const averageScore = (
-    results.score.facialAnalysis.score +
+  const averageScore = Math.round(
+    (results.score.facialAnalysis.score +
     results.score.voiceAnalysis.score +
     results.score.heartRateAnalysis.score +
-    results.score.overallHealth.score
-  ) / 4;
-  
-  const formatAdvice = (text: string) => {
-    // 简单的格式化：将文本按段落分隔并增加样式
-    return text.split('\n').map((paragraph, index) => (
-      <Typography 
-        key={index} 
-        variant="body1" 
-        gutterBottom 
-        sx={{ mb: 2 }}
-      >
-        {paragraph}
-      </Typography>
-    ));
-  };
+    results.score.overallHealth.score) / 4
+  );
 
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box sx={{ width: '100%', p: 2 }}>
       <Grid container spacing={3}>
         {/* 评分卡片 */}
         <Grid item xs={12} md={5}>
-          <Card elevation={3}>
+          <Card 
+            elevation={3} 
+            sx={{ 
+              height: '100%',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: theme.shadows[6]
+              }
+            }}
+          >
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ 
+                borderBottom: `2px solid ${theme.palette.primary.main}`,
+                pb: 1,
+                mb: 3
+              }}>
                 健康评分总览
               </Typography>
               
-              <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                <Radar 
-                  data={radarChartData} 
-                  options={{
-                    scales: {
-                      r: {
-                        min: 0,
-                        max: 100,
-                        ticks: {
-                          stepSize: 20
+              <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center',
+                flexDirection: 'column',
+                my: 2 
+              }}>
+                <Typography variant="h3" color="primary" gutterBottom>
+                  {averageScore}
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  总体健康评分
+                </Typography>
+                <Box sx={{ width: '100%', maxWidth: 400, mt: 3 }}>
+                  <Radar 
+                    data={radarChartData} 
+                    options={{
+                      scales: {
+                        r: {
+                          min: 0,
+                          max: 100,
+                          ticks: {
+                            stepSize: 20,
+                            color: theme.palette.text.secondary,
+                          },
+                          grid: {
+                            color: theme.palette.divider,
+                          },
+                          angleLines: {
+                            color: theme.palette.divider,
+                          },
+                          pointLabels: {
+                            color: theme.palette.text.primary,
+                            font: {
+                              size: 12
+                            }
+                          }
+                        }
+                      },
+                      plugins: {
+                        legend: {
+                          display: false
                         }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </Box>
               </Box>
               
               <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
                   详细评分
                 </Typography>
                 
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">面部分析</Typography>
-                    <Typography variant="body2">{results.score.facialAnalysis.score}/100</Typography>
+                {[
+                  { label: '面部分析', score: results.score.facialAnalysis.score },
+                  { label: '声音分析', score: results.score.voiceAnalysis.score },
+                  { label: '心率分析', score: results.score.heartRateAnalysis.score },
+                  { label: '整体健康', score: results.score.overallHealth.score }
+                ].map((item, index) => (
+                  <Box key={index} sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="body2">{item.label}</Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {item.score}/100
+                      </Typography>
+                    </Box>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={item.score} 
+                      sx={{ 
+                        height: 8, 
+                        borderRadius: 4,
+                        backgroundColor: theme.palette.grey[200],
+                        '& .MuiLinearProgress-bar': {
+                          borderRadius: 4,
+                          backgroundColor: theme.palette.primary.main,
+                        }
+                      }}
+                    />
                   </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={results.score.facialAnalysis.score} 
-                    sx={{ my: 1, height: 8, borderRadius: 4 }}
-                  />
-                </Box>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">声音分析</Typography>
-                    <Typography variant="body2">{results.score.voiceAnalysis.score}/100</Typography>
-                  </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={results.score.voiceAnalysis.score} 
-                    sx={{ my: 1, height: 8, borderRadius: 4 }}
-                  />
-                </Box>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">心率分析</Typography>
-                    <Typography variant="body2">{results.score.heartRateAnalysis.score}/100</Typography>
-                  </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={results.score.heartRateAnalysis.score} 
-                    sx={{ my: 1, height: 8, borderRadius: 4 }}
-                  />
-                </Box>
-                
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2">整体健康</Typography>
-                    <Typography variant="body2">{results.score.overallHealth.score}/100</Typography>
-                  </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={results.score.overallHealth.score} 
-                    sx={{ my: 1, height: 8, borderRadius: 4 }}
-                  />
-                </Box>
+                ))}
               </Box>
             </CardContent>
           </Card>
@@ -177,113 +200,135 @@ export default function AnalysisResults({ results }: AnalysisResultsProps) {
         
         {/* 详细分析结果 */}
         <Grid item xs={12} md={7}>
-          <Card elevation={3}>
+          <Card 
+            elevation={3} 
+            sx={{ 
+              height: '100%',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: theme.shadows[6]
+              }
+            }}
+          >
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom sx={{ 
+                borderBottom: `2px solid ${theme.palette.primary.main}`,
+                pb: 1,
+                mb: 3
+              }}>
                 详细分析结果
               </Typography>
               
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  面部分析
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  {results.score.facialAnalysis.details}
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {results.score.facialAnalysis.concerns.map((concern, index) => (
-                    <Chip 
-                      key={index} 
-                      label={concern} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                    />
-                  ))}
-                </Box>
-              </Box>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  声音分析
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  {results.score.voiceAnalysis.details}
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {results.score.voiceAnalysis.concerns.map((concern, index) => (
-                    <Chip 
-                      key={index} 
-                      label={concern} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                    />
-                  ))}
-                </Box>
-              </Box>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  心率分析
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  {results.score.heartRateAnalysis.details}
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-                  {results.score.heartRateAnalysis.concerns.map((concern, index) => (
-                    <Chip 
-                      key={index} 
-                      label={concern} 
-                      size="small" 
-                      color="primary" 
-                      variant="outlined" 
-                    />
-                  ))}
-                </Box>
-              </Box>
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  整体健康评估
-                </Typography>
-                <Typography variant="body2" paragraph>
-                  {results.score.overallHealth.details}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-          
-          <Card elevation={3} sx={{ mt: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                健康建议
-              </Typography>
-              
-              <Paper elevation={0} sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 2 }}>
-                {formatAdvice(results.advice)}
-              </Paper>
-              
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  推荐行动
-                </Typography>
-                <List>
-                  {results.score.overallHealth.recommendations.map((recommendation, index) => (
-                    <ListItem key={index} sx={{ py: 0.5 }}>
-                      <ListItemText 
-                        primary={recommendation} 
-                        primaryTypographyProps={{ variant: 'body2' }} 
+              {[
+                { 
+                  title: '面部分析', 
+                  details: results.score.facialAnalysis.details,
+                  concerns: results.score.facialAnalysis.concerns
+                },
+                { 
+                  title: '声音分析', 
+                  details: results.score.voiceAnalysis.details,
+                  concerns: results.score.voiceAnalysis.concerns
+                },
+                { 
+                  title: '心率分析', 
+                  details: results.score.heartRateAnalysis.details,
+                  concerns: results.score.heartRateAnalysis.concerns
+                }
+              ].map((section, index) => (
+                <Box key={index} sx={{ mb: 4 }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    {section.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    {section.details}
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {section.concerns.map((concern, idx) => (
+                      <Chip 
+                        key={idx} 
+                        label={concern} 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                        sx={{
+                          borderRadius: '4px',
+                          '& .MuiChip-label': {
+                            px: 1
+                          }
+                        }}
                       />
-                    </ListItem>
-                  ))}
-                </List>
+                    ))}
+                  </Box>
+                  {index < 2 && <Divider sx={{ my: 3 }} />}
+                </Box>
+              ))}
+
+              <Box sx={{ mt: 4 }}>
+                <Typography variant="h6" gutterBottom sx={{ 
+                  borderBottom: `2px solid ${theme.palette.primary.main}`,
+                  pb: 1,
+                  mb: 3
+                }}>
+                  健康建议
+                </Typography>
+                <Box 
+                  sx={{ 
+                    backgroundColor: alpha(theme.palette.primary.main, 0.03),
+                    borderRadius: 2,
+                    p: 3,
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    '& .markdown-body': {
+                      fontFamily: theme.typography.fontFamily,
+                      '& h1, & h2, & h3, & h4, & h5, & h6': {
+                        color: theme.palette.primary.main,
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                        paddingBottom: 1,
+                        marginBottom: 2
+                      },
+                      '& p': {
+                        marginBottom: 2,
+                        lineHeight: 1.7
+                      },
+                      '& ul, & ol': {
+                        paddingLeft: 3,
+                        marginBottom: 2
+                      },
+                      '& li': {
+                        marginBottom: 1
+                      },
+                      '& a': {
+                        color: theme.palette.primary.main,
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: 'underline'
+                        }
+                      },
+                      '& blockquote': {
+                        borderLeft: `4px solid ${theme.palette.primary.main}`,
+                        marginLeft: 0,
+                        paddingLeft: 2,
+                        paddingY: 1,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.05)
+                      },
+                      '& code': {
+                        backgroundColor: theme.palette.grey[100],
+                        padding: '2px 4px',
+                        borderRadius: 1,
+                        fontSize: '0.9em'
+                      }
+                    }
+                  }}
+                >
+                  <div className="markdown-body">
+                    <ReactMarkdown 
+                      children={results.advice}
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
+                    />
+                  </div>
+                </Box>
               </Box>
             </CardContent>
           </Card>
