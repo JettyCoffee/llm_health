@@ -352,17 +352,16 @@ export default function DataInputForm({
       }
       
       // 发送数据到API
-      const response = await fetch('/api/analyze', {
+      const response = await fetch('/api/llm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          facialImage: compressedImage,
-          audioData: processedAudio,
-          heartRateData,
-          heartRateSource,
+          facialData: compressedImage,
+          voiceData: processedAudio,
+          heartRateData: heartRateData
         }),
       });
       
