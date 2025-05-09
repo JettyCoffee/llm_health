@@ -15,9 +15,19 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   IconButton,
-  Stack
+  Stack,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
-import { PhotoCamera, Upload as UploadIcon, Mic, Stop } from '@mui/icons-material';
+import { 
+  PhotoCamera, 
+  Upload as UploadIcon, 
+  Mic, 
+  Stop,
+  ExpandMore,
+  CheckCircle
+} from '@mui/icons-material';
 import Webcam from 'react-webcam';
 
 // 图片压缩函数
@@ -67,8 +77,17 @@ async function processAudioData(audioBlob: Blob): Promise<string> {
   const wavData = new Float32Array(renderedBuffer.length);
   renderedBuffer.copyFromChannel(wavData, 0);
   
-  // 将数据转换为 base64
-  const base64 = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(wavData.buffer))));
+  // 将数据分块处理，避免栈溢出
+  const chunkSize = 1024;
+  let binary = '';
+  const bytes = new Uint8Array(wavData.buffer);
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.slice(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  
+  // 将二进制数据转换为 base64
+  const base64 = btoa(binary);
   return `data:audio/wav;base64,${base64}`;
 }
 
@@ -83,6 +102,8 @@ export default function DataInputForm({
   onAnalysisComplete,
   setIsLoading 
 }: DataInputFormProps) {
+  // 面部数据状态
+  const [showCamera, setShowCamera] = useState(false);
   const webcamRef = useRef<Webcam>(null);
   const [facialImageSource, setFacialImageSource] = useState<'camera' | 'upload'>('camera');
   const [facialImage, setFacialImage] = useState<string | null>(null);
@@ -170,10 +191,25 @@ export default function DataInputForm({
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        
+        // 检查音频大小（限制为 10MB）
+        if (audioBlob.size > 10 * 1024 * 1024) {
+          setError('录音文件过大，请录制更短的音频');
+          return;
+        }
+        
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioBlob(audioBlob);
         setAudioUrl(audioUrl);
       };
+
+      // 设置录音时长限制（30秒）
+      setTimeout(() => {
+        if (isRecording) {
+          stopRecording();
+          setError('已自动停止录音（最大录音时长为30秒）');
+        }
+      }, 30000);
 
       mediaRecorder.start();
       setIsRecording(true);
@@ -195,6 +231,9 @@ export default function DataInputForm({
 
   // 重新录音
   const resetRecording = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl); // 释放 URL 对象
+    }
     setAudioBlob(null);
     setAudioUrl(null);
   };
@@ -207,6 +246,11 @@ export default function DataInputForm({
     
     if (!currentFacialImage) {
       setError('请提供面部图像');
+      return;
+    }
+
+    if (!heartRate && !heartRateFile) {
+      setError('请提供心率数据');
       return;
     }
     
@@ -222,7 +266,6 @@ export default function DataInputForm({
       if (heartRateSource === 'manual') {
         heartRateData = heartRate;
       } else if (heartRateFile) {
-        // 读取心率文件内容
         const reader = new FileReader();
         heartRateData = await new Promise((resolve) => {
           reader.onloadend = () => resolve(reader.result as string);
@@ -264,170 +307,226 @@ export default function DataInputForm({
     }
   };
 
+  // 检查每个数据项是否已完成
+  const isFacialDataReady = facialImage || uploadedImage;
+  const isVoiceDataReady = audioBlob !== null;
+  const isHeartRateReady = heartRate !== '' || heartRateFile !== null;
+
   return (
     <Box component="form" onSubmit={handleSubmit} noValidate>
       <Grid container spacing={3}>
-        {/* 面部数据采集 */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={3}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                面部数据采集
-              </Typography>
-              
-              <ToggleButtonGroup
-                value={facialImageSource}
-                exclusive
-                onChange={handleImageSourceChange}
-                fullWidth
-                sx={{ mb: 2 }}
-              >
-                <ToggleButton value="camera">
-                  <PhotoCamera sx={{ mr: 1 }} />
-                  实时拍摄
-                </ToggleButton>
-                <ToggleButton value="upload">
-                  <UploadIcon sx={{ mr: 1 }} />
-                  上传照片
-                </ToggleButton>
-              </ToggleButtonGroup>
-              
-              {facialImageSource === 'camera' ? (
-                !facialImage ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Webcam
-                      audio={false}
-                      ref={webcamRef}
-                      screenshotFormat="image/jpeg"
-                      videoConstraints={{
-                        width: 480,
-                        height: 480,
-                        facingMode: "user"
-                      }}
-                      style={{ 
-                        width: '100%', 
-                        borderRadius: '8px', 
-                        marginBottom: '16px' 
-                      }}
-                    />
-                    <Button 
-                      variant="contained" 
-                      onClick={captureFacialImage}
-                      fullWidth
-                    >
-                      拍摄照片
-                    </Button>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Box 
-                      component="img" 
-                      src={facialImage} 
-                      alt="面部照片"
-                      sx={{ 
-                        width: '100%', 
-                        borderRadius: '8px', 
-                        marginBottom: '16px' 
-                      }}
-                    />
-                    <Button 
-                      variant="outlined" 
-                      onClick={retakeFacialImage}
-                      fullWidth
-                    >
-                      重新拍摄
-                    </Button>
-                  </Box>
-                )
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <input
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    id="image-upload"
-                    type="file"
-                    onChange={handleImageUpload}
-                  />
-                  {!uploadedImage ? (
-                    <label htmlFor="image-upload" style={{ width: '100%' }}>
-                      <Button
-                        variant="outlined"
-                        component="span"
-                        fullWidth
-                        startIcon={<UploadIcon />}
-                      >
-                        选择图片
-                      </Button>
-                    </label>
+        <Grid item xs={12}>
+          {/* 面部数据采集 */}
+          <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              sx={{
+                backgroundColor: isFacialDataReady ? 'success.light' : 'inherit',
+                '&:hover': {
+                  backgroundColor: isFacialDataReady ? 'success.light' : 'inherit',
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <Typography sx={{ flexGrow: 1 }}>面部数据采集</Typography>
+                {isFacialDataReady && <CheckCircle color="success" />}
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box>
+                <ToggleButtonGroup
+                  value={facialImageSource}
+                  exclusive
+                  onChange={handleImageSourceChange}
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  <ToggleButton value="camera">
+                    <PhotoCamera sx={{ mr: 1 }} />
+                    实时拍摄
+                  </ToggleButton>
+                  <ToggleButton value="upload">
+                    <UploadIcon sx={{ mr: 1 }} />
+                    上传照片
+                  </ToggleButton>
+                </ToggleButtonGroup>
+
+                {facialImageSource === 'camera' ? (
+                  !facialImage ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      {showCamera ? (
+                        <>
+                          <Webcam
+                            audio={false}
+                            ref={webcamRef}
+                            screenshotFormat="image/jpeg"
+                            videoConstraints={{
+                              width: 480,
+                              height: 480,
+                              facingMode: "user"
+                            }}
+                            style={{ 
+                              width: '100%', 
+                              borderRadius: '8px', 
+                              marginBottom: '16px' 
+                            }}
+                          />
+                          <Stack direction="row" spacing={2} width="100%">
+                            <Button 
+                              variant="contained" 
+                              onClick={captureFacialImage}
+                              fullWidth
+                            >
+                              拍摄照片
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              onClick={() => setShowCamera(false)}
+                              fullWidth
+                            >
+                              关闭相机
+                            </Button>
+                          </Stack>
+                        </>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          onClick={() => setShowCamera(true)}
+                          startIcon={<PhotoCamera />}
+                          fullWidth
+                        >
+                          打开相机
+                        </Button>
+                      )}
+                    </Box>
                   ) : (
-                    <>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <Box 
                         component="img" 
-                        src={uploadedImage} 
-                        alt="上传的照片"
+                        src={facialImage} 
+                        alt="面部照片"
                         sx={{ 
                           width: '100%', 
                           borderRadius: '8px', 
                           marginBottom: '16px' 
                         }}
                       />
+                      <Button 
+                        variant="outlined" 
+                        onClick={retakeFacialImage}
+                        fullWidth
+                      >
+                        重新拍摄
+                      </Button>
+                    </Box>
+                  )
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="image-upload"
+                      type="file"
+                      onChange={handleImageUpload}
+                    />
+                    {!uploadedImage ? (
                       <label htmlFor="image-upload" style={{ width: '100%' }}>
                         <Button
                           variant="outlined"
                           component="span"
                           fullWidth
+                          startIcon={<UploadIcon />}
                         >
-                          重新选择
+                          选择图片
                         </Button>
                       </label>
-                    </>
-                  )}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {/* 其他健康数据 */}
-        <Grid item xs={12} md={6}>
-          <Card elevation={3} sx={{ height: '100%' }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                其他健康数据
-              </Typography>
-              
-              {/* 录音控件 */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  声音录制
-                </Typography>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  {!audioBlob ? (
-                    <Button
-                      variant="contained"
-                      color={isRecording ? "error" : "primary"}
-                      startIcon={isRecording ? <Stop /> : <Mic />}
-                      onClick={isRecording ? stopRecording : startRecording}
-                      fullWidth
-                    >
-                      {isRecording ? "停止录音" : "开始录音"}
-                    </Button>
-                  ) : (
-                    <>
-                      <audio src={audioUrl!} controls style={{ width: '100%' }} />
-                      <IconButton onClick={resetRecording} color="primary">
-                        <UploadIcon />
-                      </IconButton>
-                    </>
-                  )}
-                </Stack>
+                    ) : (
+                      <>
+                        <Box 
+                          component="img" 
+                          src={uploadedImage} 
+                          alt="上传的照片"
+                          sx={{ 
+                            width: '100%', 
+                            borderRadius: '8px', 
+                            marginBottom: '16px' 
+                          }}
+                        />
+                        <label htmlFor="image-upload" style={{ width: '100%' }}>
+                          <Button
+                            variant="outlined"
+                            component="span"
+                            fullWidth
+                          >
+                            重新选择
+                          </Button>
+                        </label>
+                      </>
+                    )}
+                  </Box>
+                )}
               </Box>
-              
-              {/* 心率数据输入 */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  心率数据
-                </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* 声音录制 */}
+          <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              sx={{
+                backgroundColor: isVoiceDataReady ? 'success.light' : 'inherit',
+                '&:hover': {
+                  backgroundColor: isVoiceDataReady ? 'success.light' : 'inherit',
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <Typography sx={{ flexGrow: 1 }}>声音录制</Typography>
+                {isVoiceDataReady && <CheckCircle color="success" />}
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack direction="row" spacing={2} alignItems="center">
+                {!audioBlob ? (
+                  <Button
+                    variant="contained"
+                    color={isRecording ? "error" : "primary"}
+                    startIcon={isRecording ? <Stop /> : <Mic />}
+                    onClick={isRecording ? stopRecording : startRecording}
+                    fullWidth
+                  >
+                    {isRecording ? "停止录音" : "开始录音"}
+                  </Button>
+                ) : (
+                  <>
+                    <audio src={audioUrl!} controls style={{ width: '100%' }} />
+                    <IconButton onClick={resetRecording} color="primary">
+                      <UploadIcon />
+                    </IconButton>
+                  </>
+                )}
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+
+          {/* 心率数据 */}
+          <Accordion>
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              sx={{
+                backgroundColor: isHeartRateReady ? 'success.light' : 'inherit',
+                '&:hover': {
+                  backgroundColor: isHeartRateReady ? 'success.light' : 'inherit',
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <Typography sx={{ flexGrow: 1 }}>心率数据</Typography>
+                {isHeartRateReady && <CheckCircle color="success" />}
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box>
                 <ToggleButtonGroup
                   value={heartRateSource}
                   exclusive
@@ -477,23 +576,24 @@ export default function DataInputForm({
                   </Box>
                 )}
               </Box>
-              
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                color="primary"
-                sx={{ mt: 3 }}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  '提交分析'
-                )}
-              </Button>
-            </CardContent>
-          </Card>
+            </AccordionDetails>
+          </Accordion>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            disabled={isLoading || (!isFacialDataReady && !isVoiceDataReady && !isHeartRateReady)}
+          >
+            {isLoading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              '提交分析'
+            )}
+          </Button>
         </Grid>
       </Grid>
       
