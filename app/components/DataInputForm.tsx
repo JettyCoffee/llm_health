@@ -151,7 +151,7 @@ export default function DataInputForm({
   const [heartRateDataComplete, setHeartRateDataComplete] = useState(false);
   
   // 当前激活的步骤
-  const [activeStep, setActiveStep] = useState<'facial' | 'audio' | 'heartRate' | 'review'>('facial');
+  const [activeStep, setActiveStep] = useState<number>(0);
   
   // 监控数据状态变化
   useEffect(() => {
@@ -172,23 +172,15 @@ export default function DataInputForm({
   
   // 下一步
   const handleNext = () => {
-    if (activeStep === 'facial') {
-      setActiveStep('audio');
-    } else if (activeStep === 'audio') {
-      setActiveStep('heartRate');
-    } else if (activeStep === 'heartRate') {
-      setActiveStep('review');
+    if (activeStep < 3) {
+      setActiveStep(activeStep + 1);
     }
   };
   
   // 上一步
   const handleBack = () => {
-    if (activeStep === 'audio') {
-      setActiveStep('facial');
-    } else if (activeStep === 'heartRate') {
-      setActiveStep('audio');
-    } else if (activeStep === 'review') {
-      setActiveStep('heartRate');
+    if (activeStep > 0) {
+      setActiveStep(activeStep - 1);
     }
   };
 
@@ -392,8 +384,8 @@ export default function DataInputForm({
         borderRadius: 2,
         overflow: 'hidden',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: activeStep === 'facial' ? 'scale(1)' : 'scale(0.98)',
-        opacity: activeStep === 'facial' ? 1 : 0.7,
+        transform: activeStep === 0 ? 'scale(1)' : 'scale(0.98)',
+        opacity: activeStep === 0 ? 1 : 0.7,
       }}
     >
       <CardHeader
@@ -413,133 +405,165 @@ export default function DataInputForm({
       />
       <Divider />
       <CardContent>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            选择数据采集方式:
+        <Typography variant="body1" gutterBottom color="text.secondary" sx={{ mb: 3 }}>
+          请选择以下方式之一来采集面部数据。为了获得最佳分析效果，请确保：
+        </Typography>
+        <Box sx={{ pl: 2, mb: 3 }}>
+          <Typography variant="body2" component="li" gutterBottom>
+            面部正对相机，光线充足
           </Typography>
-          <ToggleButtonGroup
-            value={facialImageSource}
-            exclusive
-            onChange={handleImageSourceChange}
-            aria-label="面部数据来源"
-            sx={{ 
-              mb: 2,
-              '& .MuiToggleButton-root': {
-                borderRadius: '8px',
-                mr: 1,
-                px: 3,
-                py: 1
-              }
-            }}
-          >
-            <ToggleButton value="camera" aria-label="相机捕获">
-              <CameraAlt sx={{ mr: 1 }} />
-              使用相机
-            </ToggleButton>
-            <ToggleButton value="upload" aria-label="上传图像">
-              <UploadIcon sx={{ mr: 1 }} />
-              上传图像
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Typography variant="body2" component="li" gutterBottom>
+            保持自然表情，不要佩戴墨镜或口罩
+          </Typography>
+          <Typography variant="body2" component="li" gutterBottom>
+            图像清晰，避免模糊或过度曝光
+          </Typography>
         </Box>
 
-        {facialImageSource === 'camera' && (
-          <Box sx={{ mt: 2 }}>
-            {!showCamera && !facialImage && (
-              <Button 
-                variant="contained" 
-                color="primary" 
-                onClick={() => setShowCamera(true)}
-                startIcon={<CameraAlt />}
-                sx={{ mb: 2 }}
-              >
-                打开相机
-              </Button>
-            )}
-            
-            {showCamera && !facialImage && (
-              <Box 
+        {!facialImage && !uploadedImage && (
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Button 
+              variant="contained" 
+              onClick={() => {
+                setFacialImageSource('camera');
+                setShowCamera(true);
+              }}
+              startIcon={<CameraAlt />}
+            >
+              使用相机
+            </Button>
+            <Button
+              variant="contained"
+              component="label"
+              startIcon={<UploadIcon />}
+            >
+              上传图像
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+            </Button>
+          </Box>
+        )}
+
+        {showCamera && !facialImage && (
+          <Box 
+            sx={{ 
+              position: 'relative',
+              borderRadius: 2,
+              overflow: 'hidden',
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: theme.shadows[2],
+              mb: 2,
+              maxWidth: '400px'
+            }}
+          >
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              width="100%"
+              videoConstraints={{ facingMode: "user" }}
+            />
+            <Box 
+              sx={{ 
+                position: 'absolute', 
+                bottom: 16, 
+                left: 0, 
+                right: 0, 
+                display: 'flex',
+                justifyContent: 'center',
+                gap: 2
+              }}
+            >
+              <IconButton
+                onClick={() => setShowCamera(false)}
                 sx={{ 
-                  position: 'relative',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  border: `1px solid ${theme.palette.divider}`,
-                  boxShadow: theme.shadows[2],
-                  mb: 2
+                  bgcolor: 'white', 
+                  '&:hover': { bgcolor: 'white' },
+                  boxShadow: theme.shadows[4],
+                  p: 2
                 }}
               >
-                <Webcam
-                  audio={false}
-                  ref={webcamRef}
-                  screenshotFormat="image/jpeg"
-                  width="100%"
-                  videoConstraints={{ facingMode: "user" }}
-                />
-                <Box 
-                  sx={{ 
-                    position: 'absolute', 
-                    bottom: 16, 
-                    left: 0, 
-                    right: 0, 
-                    display: 'flex',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <IconButton
-                    onClick={captureFacialImage}
-                    color="primary"
-                    sx={{ 
-                      bgcolor: 'white', 
-                      '&:hover': { bgcolor: 'white' },
-                      boxShadow: theme.shadows[4],
-                      p: 2
-                    }}
-                  >
-                    <PhotoCamera fontSize="large" />
-                  </IconButton>
-                </Box>
-              </Box>
-            )}
-            
-            {facialImage && (
-              <Box>
-                <Box 
-                  sx={{ 
-                    mb: 2, 
-                    borderRadius: 2, 
-                    overflow: 'hidden', 
-                    boxShadow: theme.shadows[1],
-                  }}
-                >
-                  <img 
-                    src={facialImage} 
-                    alt="面部图像" 
-                    style={{ width: '100%', display: 'block' }} 
-                  />
-                </Box>
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-                  <Button 
-                    variant="outlined" 
-                    onClick={retakeFacialImage}
-                    startIcon={<CameraAlt />}
-                  >
-                    重新拍摄
-                  </Button>
-                </Stack>
-              </Box>
-            )}
+                <ArrowBack />
+              </IconButton>
+              <IconButton
+                onClick={captureFacialImage}
+                color="primary"
+                sx={{ 
+                  bgcolor: 'white', 
+                  '&:hover': { bgcolor: 'white' },
+                  boxShadow: theme.shadows[4],
+                  p: 2
+                }}
+              >
+                <PhotoCamera fontSize="large" />
+              </IconButton>
+            </Box>
           </Box>
         )}
         
-        {facialImageSource === 'upload' && (
-          <Box sx={{ mt: 2 }}>
-            {!uploadedImage && (
+        {facialImage && (
+          <Box>
+            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
+              已采集的面部图像：
+            </Typography>
+            <Box 
+              sx={{ 
+                mb: 2, 
+                borderRadius: 2, 
+                overflow: 'hidden', 
+                boxShadow: theme.shadows[1],
+                maxWidth: '400px'
+              }}
+            >
+              <img 
+                src={facialImage} 
+                alt="面部图像" 
+                style={{ width: '100%', display: 'block' }} 
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button 
+                variant="outlined" 
+                onClick={retakeFacialImage}
+                startIcon={<CameraAlt />}
+              >
+                重新拍摄
+              </Button>
+            </Box>
+          </Box>
+        )}
+        
+        {uploadedImage && (
+          <Box>
+            <Typography variant="body2" color="text.secondary" gutterBottom sx={{ mb: 1 }}>
+              已上传的面部图像：
+            </Typography>
+            <Box 
+              sx={{ 
+                mb: 2, 
+                borderRadius: 2, 
+                overflow: 'hidden',
+                boxShadow: theme.shadows[1],
+                maxWidth: '400px'
+              }}
+            >
+              <img 
+                src={uploadedImage} 
+                alt="已上传图像" 
+                style={{ width: '100%', display: 'block' }} 
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
-                variant="contained"
+                variant="outlined"
                 component="label"
                 startIcon={<UploadIcon />}
               >
-                选择图像
+                更换图像
                 <input
                   type="file"
                   hidden
@@ -547,39 +571,7 @@ export default function DataInputForm({
                   onChange={handleImageUpload}
                 />
               </Button>
-            )}
-            
-            {uploadedImage && (
-              <Box>
-                <Box 
-                  sx={{ 
-                    mb: 2, 
-                    borderRadius: 2, 
-                    overflow: 'hidden',
-                    boxShadow: theme.shadows[1],
-                  }}
-                >
-                  <img 
-                    src={uploadedImage} 
-                    alt="已上传图像" 
-                    style={{ width: '100%', display: 'block' }} 
-                  />
-                </Box>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<UploadIcon />}
-                >
-                  更换图像
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                  />
-                </Button>
-              </Box>
-            )}
+            </Box>
           </Box>
         )}
       </CardContent>
@@ -606,8 +598,8 @@ export default function DataInputForm({
         borderRadius: 2,
         overflow: 'hidden',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: activeStep === 'audio' ? 'scale(1)' : 'scale(0.98)',
-        opacity: activeStep === 'audio' ? 1 : 0.7,
+        transform: activeStep === 1 ? 'scale(1)' : 'scale(0.98)',
+        opacity: activeStep === 1 ? 1 : 0.7,
       }}
     >
       <CardHeader
@@ -754,8 +746,8 @@ export default function DataInputForm({
         borderRadius: 2,
         overflow: 'hidden',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: activeStep === 'heartRate' ? 'scale(1)' : 'scale(0.98)',
-        opacity: activeStep === 'heartRate' ? 1 : 0.7,
+        transform: activeStep === 2 ? 'scale(1)' : 'scale(0.98)',
+        opacity: activeStep === 2 ? 1 : 0.7,
       }}
     >
       <CardHeader
@@ -903,8 +895,8 @@ export default function DataInputForm({
         borderRadius: 2,
         overflow: 'hidden',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: activeStep === 'review' ? 'scale(1)' : 'scale(0.98)',
-        opacity: activeStep === 'review' ? 1 : 0.7,
+        transform: activeStep === 3 ? 'scale(1)' : 'scale(0.98)',
+        opacity: activeStep === 3 ? 1 : 0.7,
       }}
     >
       <CardHeader
@@ -1035,10 +1027,10 @@ export default function DataInputForm({
         }}
       >
         {[
-          { id: 'facial', label: '面部', icon: <FaceRetouchingNatural />, complete: facialDataComplete },
-          { id: 'audio', label: '语音', icon: <MicNone />, complete: audioDataComplete },
-          { id: 'heartRate', label: '心率', icon: <Favorite />, complete: heartRateDataComplete },
-          { id: 'review', label: '提交', icon: <Send />, complete: false },
+          { id: 0, label: '面部', icon: <FaceRetouchingNatural />, complete: facialDataComplete },
+          { id: 1, label: '语音', icon: <MicNone />, complete: audioDataComplete },
+          { id: 2, label: '心率', icon: <Favorite />, complete: heartRateDataComplete },
+          { id: 3, label: '提交', icon: <Send />, complete: false },
         ].map((step, index) => (
           <Box 
             key={step.id} 
@@ -1120,10 +1112,10 @@ export default function DataInputForm({
       {renderProgressStepper()}
       
       <Box sx={{ position: 'relative' }}>
-        {renderFacialDataSection()}
-        {renderAudioSection()}
-        {renderHeartRateSection()}
-        {renderReviewSection()}
+        {activeStep === 0 && renderFacialDataSection()}
+        {activeStep === 1 && renderAudioSection()}
+        {activeStep === 2 && renderHeartRateSection()}
+        {activeStep === 3 && renderReviewSection()}
       </Box>
     </Box>
   );

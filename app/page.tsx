@@ -25,15 +25,6 @@ export default function Home() {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h4" gutterBottom align="center">
-          多模态健康分析系统
-        </Typography>
-        <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary">
-          通过面部、声音、心率数据分析健康状况
-        </Typography>
-      </Paper>
-
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs 
           value={currentTab} 
