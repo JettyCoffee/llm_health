@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  analyses  Analysis[]
+}
+
+model Analysis {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  facialData   String?  // 存储面部数据文件路径或内容
+  voiceData    String?  // 存储声音数据文件路径或内容
+  heartRateData String? // 存储心率数据
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  scores       Score?
+  advice       Advice?
+}
+
+model Score {
+  id          String   @id @default(uuid())
+  analysisId  String   @unique
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  facialScore Float?   // 面部分析得分
+  voiceScore  Float?   // 声音分析得分
+  heartRateScore Float? // 心率分析得分
+  overallScore Float?   // 总体分析得分
+  rawData     String   // 存储原始LLM返回的JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Advice {
+  id          String   @id @default(uuid())
+  analysisId  String   @unique
+  analysis    Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  content     String   // 存储LLM生成的建议
+  summary     String   // 存储建议摘要，用于历史参考
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+} 
