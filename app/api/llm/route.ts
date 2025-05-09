@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import prisma from '@/lib/prisma';
 
 // GLM-4V API配置
 const API_KEY = process.env.GLM_API_KEY;
@@ -8,6 +7,13 @@ const API_URL = process.env.GLM_API_URL || 'https://open.bigmodel.cn/api/paas/v4
 
 // 生成第一阶段打分Prompt
 function generateScoringPrompt(facialData: string, voiceData: string, heartRateData: string) {
+  // 提取语音数据的特征描述
+  let voiceDescription = '';
+  if (voiceData) {
+    // 这里可以添加语音分析逻辑，暂时使用简单描述
+    voiceDescription = '用户提供了语音样本';
+  }
+
   return [
     {
       "role": "system",
@@ -24,7 +30,7 @@ function generateScoringPrompt(facialData: string, voiceData: string, heartRateD
         },
         {
           "type": "text",
-          "text": `我需要对这个人的健康状况进行全面分析。这是他的面部图像，声音数据是"${voiceData}"，心率数据是"${heartRateData}"。请基于这些数据进行专业分析，评估此人的健康状况，并给出以下JSON格式的评分（0-100分）结果：
+          "text": `我需要对这个人的健康状况进行全面分析。这是他的面部图像，${voiceDescription}，心率数据是"${heartRateData}"。请基于这些数据进行专业分析，评估此人的健康状况，并给出以下JSON格式的评分（0-100分）结果：
           {
             "facialAnalysis": {
               "score": 分数,
@@ -54,18 +60,14 @@ function generateScoringPrompt(facialData: string, voiceData: string, heartRateD
 }
 
 // 生成第二阶段建议Prompt
-function generateAdvicePrompt(scoreData: any, historySummary?: string) {
-  let promptContent = `基于以下健康评估数据，请给出专业、个性化的健康建议：
+function generateAdvicePrompt(scoreData: any) {
+  const promptContent = `基于以下健康评估数据，请给出专业、个性化的健康建议：
   ${JSON.stringify(scoreData, null, 2)}`;
-  
-  if (historySummary) {
-    promptContent += `\n\n此外，以下是用户过去的健康情况摘要：\n${historySummary}`;
-  }
   
   return [
     {
       "role": "system",
-      "content": "你是一位资深的健康顾问，擅长根据健康数据分析结果提供专业、个性化的健康建议。请根据用户的健康评估数据和历史记录，提供详尽、实用的健康建议。"
+      "content": "你是一位资深的健康顾问，擅长根据健康数据分析结果提供专业、个性化的健康建议。请根据用户的健康评估数据，提供详尽、实用的健康建议。"
     },
     {
       "role": "user",
@@ -115,90 +117,37 @@ function parseJsonFromLLMResponse(response: string) {
   }
 }
 
-// 提取建议摘要
-function extractAdviceSummary(advice: string) {
-  // 简单摘要：取建议的前200个字符作为摘要
-  return advice.length > 200 ? advice.substring(0, 200) + '...' : advice;
-}
-
 // API路由处理函数
 export async function POST(req: NextRequest) {
   try {
     const { userId, facialData, voiceData, heartRateData } = await req.json();
 
     // 验证输入
-    if (!userId || !facialData) {
+    if (!facialData) {
       return NextResponse.json(
-        { error: '缺少必要参数' },
+        { error: '缺少面部图像数据' },
         { status: 400 }
       );
     }
-
-    // 创建分析记录
-    const analysis = await prisma.analysis.create({
-      data: {
-        userId,
-        facialData,
-        voiceData: voiceData || '',
-        heartRateData: heartRateData || ''
-      }
-    });
-
-    // 获取历史摘要（最新的一条）
-    const latestAdvice = await prisma.advice.findFirst({
-      where: {
-        analysis: {
-          userId
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      select: {
-        summary: true
-      }
-    });
 
     // 第一阶段：评分
     const scoringPrompt = generateScoringPrompt(facialData, voiceData || '', heartRateData || '');
     const scoringResponse = await callGLMAPI(scoringPrompt);
     const scoreData = parseJsonFromLLMResponse(scoringResponse);
     
-    // 保存评分结果
-    const score = await prisma.score.create({
-      data: {
-        analysisId: analysis.id,
-        facialScore: scoreData.facialAnalysis.score,
-        voiceScore: scoreData.voiceAnalysis.score,
-        heartRateScore: scoreData.heartRateAnalysis.score,
-        overallScore: scoreData.overallHealth.score,
-        rawData: JSON.stringify(scoreData)
-      }
-    });
-
     // 第二阶段：建议
-    const advicePrompt = generateAdvicePrompt(scoreData, latestAdvice?.summary);
+    const advicePrompt = generateAdvicePrompt(scoreData);
     const adviceResponse = await callGLMAPI(advicePrompt);
-    const adviceSummary = extractAdviceSummary(adviceResponse);
-    
-    // 保存建议结果
-    const advice = await prisma.advice.create({
-      data: {
-        analysisId: analysis.id,
-        content: adviceResponse,
-        summary: adviceSummary
-      }
-    });
 
     return NextResponse.json({
-      analysisId: analysis.id,
+      analysisId: new Date().getTime().toString(), // 使用时间戳作为临时ID
       score: scoreData,
       advice: adviceResponse
     });
   } catch (error: any) {
     console.error('API处理错误:', error);
     return NextResponse.json(
-      { error: error.message || '处理请求失败' },
+      { error: error.message || 'API处理失败' },
       { status: 500 }
     );
   }
