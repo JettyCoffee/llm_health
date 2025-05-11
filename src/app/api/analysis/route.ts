@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import OpenAI from "openai";
 import { Stream } from 'openai/streaming';
 
@@ -27,8 +27,6 @@ interface StreamResponseChoice {
 interface StreamResponse {
   choices: StreamResponseChoice[];
 }
-
-const prisma = new PrismaClient();
 
 // 最大允许的视频大小 (10MB)
 const MAX_VIDEO_SIZE = 10 * 1024 * 1024;

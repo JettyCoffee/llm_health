@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
 // 类型定义
 interface AnalysisResult {
@@ -43,8 +43,6 @@ interface LlmResponse {
     };
   }>;
 }
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
