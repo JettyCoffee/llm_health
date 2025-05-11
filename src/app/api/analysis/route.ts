@@ -3,6 +3,31 @@ import { PrismaClient } from '@prisma/client';
 import OpenAI from "openai";
 import { Stream } from 'openai/streaming';
 
+// 声明类型
+interface AnalysisResult {
+  error?: string;
+  rawContent?: string;
+  analysisTitle: string;
+  analysisDateTime: string;
+  overallSummary?: Record<string, unknown>;
+  segmentedAnalysis?: Array<Record<string, unknown>>;
+  crossSegmentPatterns?: Record<string, unknown>;
+  analysisDisclaimer?: string;
+  id?: number;
+  time?: number;
+  [key: string]: unknown;
+}
+
+interface StreamResponseChoice {
+  delta: {
+    content?: string;
+  };
+}
+
+interface StreamResponse {
+  choices: StreamResponseChoice[];
+}
+
 const prisma = new PrismaClient();
 
 // 最大允许的视频大小 (10MB)
@@ -52,7 +77,7 @@ export async function POST(request: Request) {
     console.log('开始调用AI分析视频...');
     
     // 调用大模型分析 - 使用流式输出
-    // 使用 as any 绕过 TypeScript 类型检查，因为 DashScope API 扩展了 OpenAI 的接口
+    // DashScope API 扩展了 OpenAI 的接口，这里使用 any 类型绕过类型检查
     const params = {
       model: "qwen-omni-turbo",
       messages: [
@@ -79,7 +104,9 @@ export async function POST(request: Request) {
       modalities: ["text"]
     };
     
-    const completion = await openai.chat.completions.create(params as any) as unknown as Stream<any>;
+    // 使用类型断言处理自定义API接口
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const completion = await openai.chat.completions.create(params as any) as unknown as Stream<StreamResponse>;
 
     console.log('开始接收AI分析结果...');
 
@@ -94,7 +121,7 @@ export async function POST(request: Request) {
     console.log('成功接收完整结果');
 
     // 解析结果
-    let result;
+    let result: AnalysisResult;
     try {
       // 检查是否包含Markdown代码块，并尝试提取JSON内容
       if (fullContent.includes('```json')) {
@@ -102,14 +129,14 @@ export async function POST(request: Request) {
         const jsonMatch = fullContent.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonMatch && jsonMatch[1]) {
           // 尝试解析提取出的JSON
-          result = JSON.parse(jsonMatch[1]);
+          result = JSON.parse(jsonMatch[1]) as AnalysisResult;
           console.log('成功从Markdown代码块中提取并解析JSON');
         } else {
           throw new Error('无法从Markdown代码块中提取JSON');
         }
       } else {
         // 直接尝试解析
-      result = JSON.parse(fullContent);
+      result = JSON.parse(fullContent) as AnalysisResult;
       console.log('成功解析为JSON格式');
       }
     } catch (e) {

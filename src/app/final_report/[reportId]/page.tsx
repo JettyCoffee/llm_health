@@ -279,9 +279,9 @@ export default function FinalReportPage() {
               详细分析
             </Typography>
             
-            <Grid container spacing={3}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
               {/* 认知维度 */}
-              <Grid xs={12} md={4}>
+              <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'info.main' }}>
@@ -310,10 +310,10 @@ export default function FinalReportPage() {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
               
               {/* 情感维度 */}
-              <Grid xs={12} md={4}>
+              <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'error.main' }}>
@@ -351,10 +351,10 @@ export default function FinalReportPage() {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
               
               {/* 行为维度 */}
-              <Grid xs={12} md={4}>
+              <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'success.main' }}>
@@ -383,8 +383,8 @@ export default function FinalReportPage() {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Box>
           
           {/* 洞察与建议 */}
@@ -396,9 +396,9 @@ export default function FinalReportPage() {
               </Typography>
             </Box>
             
-            <Grid container spacing={3}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
               {/* 潜在优势 */}
-              <Grid xs={12} md={4}>
+              <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
                 <Card variant="outlined" sx={{ bgcolor: 'success.light', height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
@@ -413,10 +413,10 @@ export default function FinalReportPage() {
                     </List>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
               
               {/* 潜在挑战 */}
-              <Grid xs={12} md={4}>
+              <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
                 <Card variant="outlined" sx={{ bgcolor: 'error.light', height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
@@ -431,10 +431,10 @@ export default function FinalReportPage() {
                     </List>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
               
               {/* 发展建议 */}
-              <Grid xs={12} md={4}>
+              <Box sx={{ flexGrow: 1, flexBasis: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
                 <Card variant="outlined" sx={{ bgcolor: 'info.light', height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
@@ -449,8 +449,8 @@ export default function FinalReportPage() {
                     </List>
                   </CardContent>
                 </Card>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Box>
           
           {/* 免责声明 */}

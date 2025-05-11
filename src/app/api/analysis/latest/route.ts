@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
+// 添加类型定义
+interface AnalysisResult {
+  id?: number;
+  time: number;
+  userId: string;
+  result: string;
+  createdAt: Date;
+}
+
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
@@ -22,7 +31,7 @@ export async function GET(request: Request) {
         where: {
           time: time,
         },
-      });
+      }) as AnalysisResult | null;
       
       if (!result) {
         return NextResponse.json(
@@ -39,7 +48,7 @@ export async function GET(request: Request) {
       orderBy: {
         time: 'desc',
       },
-    });
+    }) as AnalysisResult | null;
     
     if (!latestResult) {
       return NextResponse.json(

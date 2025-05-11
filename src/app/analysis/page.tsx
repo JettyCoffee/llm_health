@@ -11,11 +11,21 @@ import Step3Preview from './components/Step3Preview';
 import { analyzeData } from './utils/analyzeData';
 import { useRouter } from 'next/navigation';
 
+// 导入AnalysisResult类型
+import type { AnalysisResult } from './utils/analyzeData';
+
 const steps = [
   '数据采集说明',
   '录制视频',
   '确认数据'
 ];
+
+interface ReportResult {
+  reportId?: number;
+  report?: Record<string, unknown>;
+  success?: boolean;
+  error?: string;
+}
 
 export default function AnalysisPage() {
   const router = useRouter();
@@ -23,7 +33,7 @@ export default function AnalysisPage() {
   const [recordedVideo, setRecordedVideo] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeStatus, setAnalyzeStatus] = useState<string>('等待中');
-  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
   const handleStep1Complete = () => {
     setActiveStep(1);
@@ -52,7 +62,7 @@ export default function AnalysisPage() {
       console.log('分析结果:', result);
       
       // 获取分析ID - 增强ID获取逻辑
-      let analysisId;
+      let analysisId: number | undefined;
       
       if (result?.id) {
         // 如果有明确的ID字段
@@ -67,7 +77,7 @@ export default function AnalysisPage() {
         if (!latestResponse.ok) {
           throw new Error('获取最新分析结果失败');
         }
-        const latestData = await latestResponse.json();
+        const latestData = await latestResponse.json() as { time?: number };
         if (latestData && latestData.time !== undefined) {
           analysisId = latestData.time;
           console.log('使用最新分析结果ID:', analysisId);
@@ -87,11 +97,11 @@ export default function AnalysisPage() {
       });
       
       if (!reportResponse.ok) {
-        const errorData = await reportResponse.json();
+        const errorData = await reportResponse.json() as { error: string };
         throw new Error(errorData.error || '生成报告失败');
       }
       
-      const reportResult = await reportResponse.json();
+      const reportResult = await reportResponse.json() as ReportResult;
       console.log('报告生成结果:', reportResult);
       
       // 跳转到最终报告页面

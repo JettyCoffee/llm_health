@@ -135,9 +135,15 @@ export default function Home() {
       <Container maxWidth="lg">
         <Stack spacing={8} sx={{ py: 4 }}>
           {/* 研究背景部分 */}
-          <Grid container spacing={4}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {sections.map((section, index) => (
-              <Grid item xs={12} md={4} key={index} component="div">
+              <Box 
+                key={index} 
+                sx={{ 
+                  flexGrow: 1, 
+                  flexBasis: { xs: '100%', md: 'calc(33.33% - 16px)' }
+                }}
+              >
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardContent>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -151,9 +157,9 @@ export default function Home() {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
 
           {/* 研究现状分析 */}
           <Paper sx={{ p: 4 }}>
@@ -177,9 +183,15 @@ export default function Home() {
               <FavoriteIcon fontSize="large" color="error" sx={{ mr: 2 }} />
               适用人群
             </Typography>
-            <Grid container spacing={4}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
               {userGroups.map((group, index) => (
-                <Grid item xs={12} md={4} key={index} component="div">
+                <Box 
+                  key={index} 
+                  sx={{ 
+                    flexGrow: 1, 
+                    flexBasis: { xs: '100%', md: 'calc(33.33% - 16px)' }
+                  }}
+                >
                   <Card sx={{ height: '100%' }}>
                     <CardContent>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -193,9 +205,9 @@ export default function Home() {
                       </Typography>
                     </CardContent>
                   </Card>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
           </Box>
 
           {/* 研究目的 */}

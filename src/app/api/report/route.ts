@@ -1,11 +1,54 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
+// 类型定义
+interface AnalysisResult {
+  id?: number;
+  time: number;
+  userId: string;
+  result: string;
+  createdAt: Date;
+}
+
+interface AnalysisData {
+  error?: string;
+  rawContent?: string;
+  analysisTitle?: string;
+  analysisDateTime?: string;
+  overallSummary?: Record<string, unknown>;
+  segmentedAnalysis?: Array<Record<string, unknown>>;
+  crossSegmentPatterns?: Record<string, unknown>;
+  analysisDisclaimer?: string;
+  id?: number;
+  time?: number;
+  [key: string]: unknown;
+}
+
+interface PsychologicalReport {
+  reportTitle?: string;
+  reportDateTime?: string;
+  overallAssessment?: Record<string, unknown>;
+  detailedAnalysis?: Record<string, unknown>;
+  insightsAndRecommendations?: Record<string, unknown>;
+  disclaimer?: string;
+  raw?: string;
+  error?: string;
+  [key: string]: unknown;
+}
+
+interface LlmResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const { analysisId } = await request.json();
+    const { analysisId } = await request.json() as { analysisId?: number };
     
     if (!analysisId && analysisId !== 0) {
       return NextResponse.json(
@@ -29,9 +72,9 @@ export async function POST(request: Request) {
     }
 
     // 解析分析结果
-    let analysisData;
+    let analysisData: AnalysisData;
     try {
-      analysisData = JSON.parse(analysis.result);
+      analysisData = JSON.parse(analysis.result) as AnalysisData;
       // 如果解析出的结果包含rawContent字段，说明原始分析已经解析失败
       // 需要尝试直接从rawContent中提取有用信息
       if (analysisData.rawContent && analysisData.error === '分析结果解析失败') {
@@ -44,7 +87,7 @@ export async function POST(request: Request) {
           if (jsonMatch && jsonMatch[1]) {
             try {
               // 尝试解析提取出的JSON
-              const extractedData = JSON.parse(jsonMatch[1]);
+              const extractedData = JSON.parse(jsonMatch[1]) as AnalysisData;
               console.log('成功从Markdown代码块中提取并解析JSON');
               analysisData = extractedData; // 使用提取的数据替换
             } catch (parseError) {
@@ -130,27 +173,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const reportData = await response.json();
+    const reportData = await response.json() as LlmResponse;
     console.log('成功获取心理分析报告');
 
     // 解析LLM返回的内容
-    let finalReport;
+    let finalReport: PsychologicalReport;
     try {
       // 如果reportData.choices[0].message.content是字符串形式的JSON，解析它
       if (typeof reportData.choices[0].message.content === 'string') {
         try {
-          finalReport = JSON.parse(reportData.choices[0].message.content);
+          finalReport = JSON.parse(reportData.choices[0].message.content) as PsychologicalReport;
         } catch (e) {
           // 如果解析失败，直接使用原始内容
           finalReport = { raw: reportData.choices[0].message.content };
         }
       } else {
         // 否则直接使用
-        finalReport = reportData.choices[0].message.content;
+        finalReport = reportData.choices[0].message.content as unknown as PsychologicalReport;
       }
     } catch (e) {
       console.error('解析LLM响应失败:', e);
-      finalReport = { error: '无法解析LLM响应', raw: reportData };
+      finalReport = { error: '无法解析LLM响应', raw: JSON.stringify(reportData) };
     }
 
     // 保存最终报告到数据库

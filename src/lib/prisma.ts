@@ -4,8 +4,10 @@ const prismaClientSingleton = () => {
   return new PrismaClient();
 };
 
+// 正确扩展globalThis类型
 declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
+  // eslint-disable-next-line no-var
+  var prisma: ReturnType<typeof prismaClientSingleton> | undefined;
 }
 
 const prisma = globalThis.prisma ?? prismaClientSingleton();

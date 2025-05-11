@@ -2,6 +2,36 @@ interface AnalysisData {
   video: File;
 }
 
+// 添加分析结果的接口定义
+export interface AnalysisResult {
+  id?: number;
+  time?: number;
+  analysisTitle?: string;
+  analysisDateTime?: string;
+  overallSummary?: {
+    generalReadingStyle?: string;
+    mostProminentFacialCueOverall?: string;
+    mostProminentVocalCueOverall?: string;
+    [key: string]: unknown;
+  };
+  segmentedAnalysis?: Array<{
+    segmentIndex?: number;
+    textSegment?: string;
+    startTimeSec?: number | null;
+    endTimeSec?: number | null;
+    facialObservations?: Record<string, unknown>;
+    vocalObservations?: Record<string, unknown>;
+    congruenceAssessment?: string;
+    potentialInterpretationSegment?: string;
+    [key: string]: unknown;
+  }>;
+  crossSegmentPatterns?: Record<string, unknown>;
+  analysisDisclaimer?: string;
+  error?: string;
+  rawContent?: string;
+  [key: string]: unknown;
+}
+
 const ANALYSIS_PROMPT = `你是一个高级的多模态分析专家，擅长结合文本、音频和视频信息，分析人类的非语言沟通行为。你的任务是细致地观察用户朗读自己创作的文本时的面部表情和声音特征，并将分析结果以高度结构化的JSON格式输出，用于后续的数据处理和报告生成。
 
 请你仔细分析音频和视频，参照提供的文本，重点关注以下方面：
@@ -57,7 +87,7 @@ const ANALYSIS_PROMPT = `你是一个高级的多模态分析专家，擅长结�
   "analysisDisclaimer": "本分析仅基于用户朗读给定文本时的可观察非语言行为（面部表情、声音特征）。它提供了关于朗读者当下情绪、对特定内容的反应或思考过程的潜在线索。本报告不构成专业的心理诊断或评估。"
 }`;
 
-export async function analyzeData(data: AnalysisData) {
+export async function analyzeData(data: AnalysisData): Promise<AnalysisResult> {
   try {
     const formData = new FormData();
     formData.append('video', data.video);
@@ -72,7 +102,7 @@ export async function analyzeData(data: AnalysisData) {
     }
 
     const result = await response.json();
-    return result;
+    return result as AnalysisResult;
   } catch (error) {
     console.error('Analysis error:', error);
     throw new Error('数据分析失败，请稍后重试');
