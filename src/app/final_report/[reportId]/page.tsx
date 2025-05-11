@@ -281,7 +281,7 @@ export default function FinalReportPage() {
             
             <Grid container spacing={3}>
               {/* 认知维度 */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'info.main' }}>
@@ -313,7 +313,7 @@ export default function FinalReportPage() {
               </Grid>
               
               {/* 情感维度 */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'error.main' }}>
@@ -354,7 +354,7 @@ export default function FinalReportPage() {
               </Grid>
               
               {/* 行为维度 */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <Card variant="outlined" sx={{ height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'success.main' }}>
@@ -398,7 +398,7 @@ export default function FinalReportPage() {
             
             <Grid container spacing={3}>
               {/* 潜在优势 */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <Card variant="outlined" sx={{ bgcolor: 'success.light', height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
@@ -416,7 +416,7 @@ export default function FinalReportPage() {
               </Grid>
               
               {/* 潜在挑战 */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <Card variant="outlined" sx={{ bgcolor: 'error.light', height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
@@ -434,7 +434,7 @@ export default function FinalReportPage() {
               </Grid>
               
               {/* 发展建议 */}
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <Card variant="outlined" sx={{ bgcolor: 'info.light', height: '100%' }}>
                   <CardContent>
                     <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>

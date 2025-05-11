@@ -109,8 +109,8 @@ export async function POST(request: Request) {
         }
       } else {
         // 直接尝试解析
-        result = JSON.parse(fullContent);
-        console.log('成功解析为JSON格式');
+      result = JSON.parse(fullContent);
+      console.log('成功解析为JSON格式');
       }
     } catch (e) {
       console.error('Error parsing analysis result:', e);

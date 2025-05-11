@@ -108,7 +108,7 @@ export default function AnalysisPage() {
       setAnalyzeStatus(`处理失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       setTimeout(() => {
-        setIsAnalyzing(false);
+      setIsAnalyzing(false);
       }, 2000);
     }
   };
