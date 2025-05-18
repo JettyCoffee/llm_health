@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AnalysisReport from '../components/AnalysisReport';
 import { Typography, Box, CircularProgress } from '@mui/material';
+import { supabase } from '@/lib/supabase';
 
 export default function ReportPage() {
   const [analysisData, setAnalysisData] = useState<any>(null);

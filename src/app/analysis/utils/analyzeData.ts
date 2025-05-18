@@ -92,19 +92,28 @@ export async function analyzeData(data: AnalysisData): Promise<AnalysisResult> {
     const formData = new FormData();
     formData.append('video', data.video);
 
-    const response = await fetch('/api/analysis', {
+    // 使用新的合并API路由
+    const response = await fetch('/api/analyze-and-report', {
       method: 'POST',
       body: formData,
     });
 
+    const result = await response.json();
+    
     if (!response.ok) {
-      throw new Error('分析请求失败');
+      throw new Error(result.error || '分析请求失败');
     }
 
-    const result = await response.json();
-    return result as AnalysisResult;
+    return {
+      id: result.reportId,
+      time: result.reportId,
+      ...result.report,
+    } as AnalysisResult;
   } catch (error) {
     console.error('Analysis error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error('数据分析失败，请稍后重试');
   }
 } 

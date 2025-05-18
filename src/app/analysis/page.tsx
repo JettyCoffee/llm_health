@@ -49,67 +49,24 @@ export default function AnalysisPage() {
   };
 
   const handleStep3Complete = async () => {
-    if (!recordedVideo) return;
+    if (!recordedVideo) {
+      return;
+    }
 
     setIsAnalyzing(true);
-    setAnalyzeStatus('正在分析视频...');
+    setAnalyzeStatus('正在分析视频并生成心理分析报告...');
+    
     try {
-      // 第一步：视频分析
+      // 一次性完成视频分析和报告生成
       const result = await analyzeData({
         video: recordedVideo
       });
       setAnalysisResult(result);
-      console.log('分析结果:', result);
+      console.log('分析和报告结果:', result);
       
-      // 获取分析ID - 增强ID获取逻辑
-      let analysisId: number | undefined;
-      
-      if (result?.id) {
-        // 如果有明确的ID字段
-        analysisId = result.id;
-      } else if (result?.time !== undefined) {
-        // 如果有time字段
-        analysisId = result.time;
-      } else {
-        // 尝试获取最新分析结果的ID
-        setAnalyzeStatus('正在获取分析结果ID...');
-        const latestResponse = await fetch('/api/analysis/latest');
-        if (!latestResponse.ok) {
-          throw new Error('获取最新分析结果失败');
-        }
-        const latestData = await latestResponse.json() as { time?: number };
-        if (latestData && latestData.time !== undefined) {
-          analysisId = latestData.time;
-          console.log('使用最新分析结果ID:', analysisId);
-        } else {
-          throw new Error('无法获取分析ID');
-        }
-      }
-      
-      // 第二步：生成心理分析报告
-      setAnalyzeStatus('正在生成心理分析报告...');
-      const reportResponse = await fetch('/api/report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ analysisId }),
-      });
-      
-      if (!reportResponse.ok) {
-        const errorData = await reportResponse.json() as { error: string };
-        throw new Error(errorData.error || '生成报告失败');
-      }
-      
-      const reportResult = await reportResponse.json() as ReportResult;
-      console.log('报告生成结果:', reportResult);
-      
-      // 跳转到最终报告页面
-      if (reportResult.reportId !== undefined) {
-        router.push(`/final_report/${reportResult.reportId}`);
-      } else if (reportResult.report && analysisId !== undefined) {
-        // 如果没有明确的reportId但有analysisId，使用analysisId+1000作为reportId
-        router.push(`/final_report/${analysisId + 1000}`);
+      if (result?.time !== undefined) {
+        // 直接跳转到最终报告页面
+        router.push(`/final_report/${result.time}`);
       } else {
         throw new Error('无法获取报告ID');
       }

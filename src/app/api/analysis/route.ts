@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { saveAnalysisResult } from '@/lib/supabase-client';
 import OpenAI from "openai";
 import { Stream } from 'openai/streaming';
 
@@ -65,9 +65,16 @@ export async function POST(request: Request) {
     const videoBuffer = await video.arrayBuffer();
     const videoBase64 = Buffer.from(videoBuffer).toString('base64');
     
+    if (!process.env.DASHSCOPE_API_KEY) {
+      return NextResponse.json(
+        { error: '缺少 API 密钥配置' },
+        { status: 500 }
+      );
+    }
+
     // 创建DashScope API客户端
     const openai = new OpenAI({
-      apiKey: process.env.DASHSCOPE_API_KEY || 'your-api-key',
+      apiKey: process.env.DASHSCOPE_API_KEY,
       baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
       timeout: 120000 // 设置更长的超时时间（120秒）
     });
@@ -75,7 +82,6 @@ export async function POST(request: Request) {
     console.log('开始调用AI分析视频...');
     
     // 调用大模型分析 - 使用流式输出
-    // DashScope API 扩展了 OpenAI 的接口，这里使用 any 类型绕过类型检查
     const params = {
       model: "qwen-omni-turbo",
       messages: [
@@ -90,7 +96,7 @@ export async function POST(request: Request) {
             },
             { 
               type: "text", 
-              text: "请仔细观察视频中用户的面部表情、语音语调和整体表现，分析用户的情感状态和可能的心理活动。分析应包括：1. 面部表情特征，2. 声音特征分析，3. 整体情感状态评估。请以JSON格式返回分析结果，格式如下：{\n\"analysisTitle\": \"用户表现分析报告\",\n\"analysisDateTime\": \"当前时间\",\n\"overallSummary\": {\n  \"generalImpression\": \"整体印象\",\n  \"emotionalState\": \"情绪状态\",\n  \"potentialThoughts\": \"可能的想法\"\n},\n\"facialAnalysis\": {\n  \"primaryExpression\": \"主要表情\",\n  \"expressionChanges\": \"表情变化\",\n  \"eyeGaze\": \"眼神描述\",\n  \"microExpressions\": [\"微表情列表\"]\n},\n\"voiceAnalysis\": {\n  \"pace\": \"语速评估\",\n  \"tone\": \"语调评估\",\n  \"volume\": \"音量评估\",\n  \"emotionalMarkers\": [\"语音中的情绪标记\"]\n},\n\"conclusionAndRecommendations\": \"基于观察的总结和建议\",\n\"disclaimer\": \"分析免责声明\"\n}"
+              text: "请仔细观察视频中用户的面部表情、语音语调和整体表现，分析用户的情感状态和可能的心理活动。分析应包括：1. 面部表情特征，2. 声音特征分析，3. 整体情感状态评估。请以JSON格式返回分析结果，格式如下：{\n\"analysisTitle\": \"用户表现分析报告\",\n\"analysisDateTime\": \"当前时间\",\n\"overallSummary\": {\n  \"generalImpression\": \"整体印象\",\n  \"emotionalState\": \"情绪状态\",\n  \"potentialThoughts\": \"可能的想法\"\n},\n\"facialAnalysis\": {\n  \"primaryExpression\": \"主要表情\",\n  \"expressionChanges\": \"表情变化\",\n  \"eyeGaze\": \"眼神描述\",\n  \"microExpressions\": [\"微表情列表\"]\n},\n\"voiceAnalysis\": {\n  \"pace\": \"语速评估\",\n  \"tone\": \"语调评估\",\n  \"volume\": \"音量评估\",\n  \"emotionalMarkers\": [\"语音中的情绪标记\"]\n},\n\"conclusionAndRecommendations\": \"基于观察的总结和建议\",\n\"disclaimer\": \"分析免责声明\"\n}" 
             }
           ]
         }
@@ -102,21 +108,41 @@ export async function POST(request: Request) {
       modalities: ["text"]
     };
     
-    // 使用类型断言处理自定义API接口
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const completion = await openai.chat.completions.create(params as any) as unknown as Stream<StreamResponse>;
-
-    console.log('开始接收AI分析结果...');
+    let completion;
+    try {
+      // 使用类型断言处理自定义API接口
+      completion = await openai.chat.completions.create(params as any) as unknown as Stream<StreamResponse>;
+      console.log('成功创建AI分析请求');
+    } catch (error) {
+      console.error('OpenAI API 错误:', error);
+      return NextResponse.json(
+        { 
+          error: '调用AI服务失败',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        { status: 500 }
+      );
+    }
 
     // 使用流式处理收集完整响应
     let fullContent = '';
-    for await (const chunk of completion) {
-      if (Array.isArray(chunk.choices) && chunk.choices.length > 0 && chunk.choices[0].delta?.content) {
-        fullContent += chunk.choices[0].delta.content;
+    try {
+      for await (const chunk of completion) {
+        if (Array.isArray(chunk.choices) && chunk.choices.length > 0 && chunk.choices[0].delta?.content) {
+          fullContent += chunk.choices[0].delta.content;
+        }
       }
+      console.log('成功接收完整结果');
+    } catch (error) {
+      console.error('流处理错误:', error);
+      return NextResponse.json(
+        { 
+          error: '处理AI响应时出错',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        { status: 500 }
+      );
     }
-
-    console.log('成功接收完整结果');
 
     // 解析结果
     let result: AnalysisResult;
@@ -127,15 +153,25 @@ export async function POST(request: Request) {
         const jsonMatch = fullContent.match(/```json\s*([\s\S]*?)\s*```/);
         if (jsonMatch && jsonMatch[1]) {
           // 尝试解析提取出的JSON
-          result = JSON.parse(jsonMatch[1]) as AnalysisResult;
-          console.log('成功从Markdown代码块中提取并解析JSON');
+          const parsedResult = JSON.parse(jsonMatch[1]);
+          result = {
+            ...parsedResult,
+            analysisDateTime: parsedResult.analysisDateTime || new Date().toISOString(),
+            analysisTitle: parsedResult.analysisTitle || "用户表现分析报告"
+          } as AnalysisResult;
+          console.log('成功从Markdown代码块中提取并解析JSON:', result);
         } else {
           throw new Error('无法从Markdown代码块中提取JSON');
         }
       } else {
         // 直接尝试解析
-      result = JSON.parse(fullContent) as AnalysisResult;
-      console.log('成功解析为JSON格式');
+        const parsedResult = JSON.parse(fullContent);
+        result = {
+          ...parsedResult,
+          analysisDateTime: parsedResult.analysisDateTime || new Date().toISOString(),
+          analysisTitle: parsedResult.analysisTitle || "用户表现分析报告"
+        } as AnalysisResult;
+        console.log('成功解析为JSON格式:', result);
       }
     } catch (e) {
       console.error('Error parsing analysis result:', e);
@@ -144,29 +180,47 @@ export async function POST(request: Request) {
         error: '分析结果解析失败', 
         rawContent: fullContent,
         analysisTitle: "解析失败的分析报告",
-        analysisDateTime: new Date().toISOString(),
-        id: Date.now() // 添加一个ID字段以便前端能够识别
-      };
+        analysisDateTime: new Date().toISOString()
+      } as AnalysisResult;
     }
 
     // 保存到数据库
-    const lastResult = await prisma.analysisResult.findFirst({
-      orderBy: {
-        time: 'desc',
-      },
-    });
+    try {
+      console.log('正在保存分析结果到数据库...');
+      // 创建一个新对象用于保存，避免循环引用
+      const dataToSave = JSON.parse(JSON.stringify(result));
+      const { data: savedResult } = await saveAnalysisResult('admin', dataToSave);
+      
+      if (!savedResult) {
+        console.error('保存结果为空');
+        throw new Error('保存分析结果失败：没有返回保存的数据');
+      }
 
-    const nextTime = lastResult ? lastResult.time + 1 : 0;
-
-    await prisma.analysisResult.create({
-      data: {
-        userId: 'admin',
-        time: nextTime,
-        result: JSON.stringify(result),
-      },
-    });
-
-    console.log('分析结果已保存到数据库');
+      result = {
+        ...result,
+        id: savedResult.id,
+        time: savedResult.time
+      };
+      
+      console.log('分析结果成功保存到数据库:', {
+        id: result.id,
+        time: result.time,
+        userId: 'admin'
+      });
+    } catch (error) {
+      console.error('数据库保存错误:', error);
+      if (error instanceof Error) {
+        console.error('错误详情:', error.stack);
+      }
+      return NextResponse.json(
+        { 
+          error: '保存分析结果失败',
+          details: error instanceof Error ? error.message : String(error)
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(result);
   } catch (error) {
     console.error('Analysis error:', error);
@@ -175,4 +229,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
