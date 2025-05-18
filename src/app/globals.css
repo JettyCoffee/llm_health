@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
+  --primary: #5f5af6;
+  --primary-dark: #4945b5;
+  --secondary: #a162e8;
+  --accent: #f093b0;
+  --success: #4eb571;
+  --warning: #edca85;
+  --error: #e2574c;
+  --info: #5fb0f6;
+  
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #f8f9ff;
+  --card-shadow: rgba(149, 157, 165, 0.15);
+  
+  --transition-fast: 0.2s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
+  
+  --radius-small: 4px;
+  --radius-normal: 8px;
+  --radius-large: 16px;
 }
 
 @theme inline {
@@ -14,13 +33,182 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #10101e;
     --foreground: #ededed;
+    --card-bg: #1a1a30;
+    --card-shadow: rgba(0, 0, 0, 0.3);
   }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-normal);
+  box-shadow: 0 8px 30px var(--card-shadow);
+  transition: all var(--transition-normal) ease;
+}
+
+.card:hover {
+  box-shadow: 0 12px 40px var(--card-shadow);
+  transform: translateY(-5px);
+}
+
+.glassmorphism {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.dark .glassmorphism {
+  background: rgba(20, 20, 40, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  border-radius: var(--radius-small);
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all var(--transition-fast) ease;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(95, 90, 246, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  box-shadow: 0 6px 15px rgba(95, 90, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.animate-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--primary-dark) 0%, var(--secondary) 100%);
+}
+
+/* 加载动画 */
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-dots .dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--primary);
+  border-radius: 50%;
+  animation: dot-pulse 1.5s infinite ease-in-out;
+}
+
+.loading-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-pulse {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* 渐变背景 */
+.gradient-bg {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+}
+
+/* 呼吸灯效果 */
+.pulse-effect {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
