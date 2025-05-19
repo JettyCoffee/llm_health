@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Box, Button, Typography, Paper, Alert, CircularProgress } from '@mui/material';
+import { Box, Button, Typography, Paper, Alert, CircularProgress, LinearProgress } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import StopIcon from '@mui/icons-material/Stop';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
+import useVideoProcessor from '../utils/useVideoProcessor';
 
 interface Step2RecordProps {
   onComplete: (video: File) => void;
@@ -21,12 +22,16 @@ export default function Step2Record({ onComplete }: Step2RecordProps) {
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const [compressionStatus, setCompressionStatus] = useState<string | null>(null);
+  const [conversionProgress, setConversionProgress] = useState(0);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // 使用 VideoProcessor 钩子来处理 WebM 到 MP4 的转换
+  const videoProcessor = useVideoProcessor();
 
   useEffect(() => {
     // 在组件卸载时停止并清理所有媒体流
@@ -94,20 +99,45 @@ export default function Step2Record({ onComplete }: Step2RecordProps) {
   };
 
   const compressVideo = async (videoBlob: Blob): Promise<File> => {
-    // 这里简化处理，实际应该使用某种视频压缩库
-    // 由于浏览器端压缩视频相当复杂，这里只返回原始视频
-    // 将来可以集成如 ffmpeg.wasm 等库进行实际压缩
-    
+    // 使用 ffmpeg.wasm 进行 WebM 到 MP4 的转换
     setCompressionStatus('处理视频中...');
     
-    // 模拟压缩过程
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setCompressionStatus(null);
-    // 注意：这里我们仍然使用 webm 格式，因为大多数浏览器不支持直接录制 mp4
-    const file = new File([videoBlob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
-    
-    return file;
+    try {
+      // 进度更新
+      const progressInterval = setInterval(() => {
+        if (videoProcessor.state.progress > 0) {
+          setConversionProgress(videoProcessor.state.progress);
+          setCompressionStatus(videoProcessor.state.statusMessage || '处理视频中...');
+        }
+      }, 100);
+      
+      // 执行转换
+      const convertedFile = await videoProcessor.convertWebmToMp4(videoBlob);
+      
+      // 清理进度更新
+      clearInterval(progressInterval);
+      
+      if (!convertedFile) {
+        console.warn('视频转换失败，使用原始格式', videoProcessor.state.error);
+        setRecordingError('视频转换到MP4格式失败: ' + (videoProcessor.state.error || '未知错误') + 
+                       '。将使用原始WebM格式继续。');
+        // 回退到原始WebM文件
+        return new File([videoBlob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
+      }
+      
+      setCompressionStatus(null);
+      setConversionProgress(0);
+      
+      return convertedFile;
+    } catch (error) {
+      console.error('视频转换错误:', error);
+      setRecordingError('视频处理失败: ' + (error as Error).message);
+      setCompressionStatus(null);
+      setConversionProgress(0);
+      
+      // 如果转换失败，回退到原始 WebM 文件
+      return new File([videoBlob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
+    }
   };
 
   const startRecording = async () => {
@@ -222,15 +252,37 @@ export default function Step2Record({ onComplete }: Step2RecordProps) {
 
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        录制视频
-      </Typography>
       <Typography paragraph>
         请对着摄像头录制视频（最长 {MAX_RECORDING_TIME} 秒），或上传MP4格式的视频文件。
       </Typography>
+      
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
+        {/* 左侧：朗读文字区域 */}
+        <Paper sx={{ p: 2, bgcolor: '#f5f5f5', flex: { xs: '1', md: '0.45' }, height: 'fit-content' }}>
+          <Typography 
+            paragraph 
+            sx={{ 
+              p: 2, 
+              bgcolor: '#fff', 
+              fontWeight: 'medium',
+              lineHeight: 1.8,
+              maxHeight: '450px',
+              overflowY: 'auto'
+            }}
+          >
+            今天的天气很好，阳光明媚，让人心情愉快。我感到平静而满足，就像在宁静的湖边散步一样。
+            
+            想象一下，当我得知自己考试通过的那一刻，我简直太激动了！我立刻拿起手机，激动地告诉了所有朋友！这是我付出那么多努力后终于得到的回报，我感到无比自豪和兴奋！这种成就感真是难以言表！我恨不得马上冲出去大声喊出来，让全世界都知道我成功了！这一切的努力都是值得的！
+            
+            回到现实，我深呼吸，慢慢平静下来。生活中有起有落，这很正常。我学会了接受失败，也懂得了欣赏成功的喜悦。无论遇到什么困难，我都会坦然面对，理性分析，寻找解决方案。平静和耐心是我面对挑战的态度。这些经历让我成长，让我更加坚强。
+            
+            总的来说，我希望通过这次测试了解自己的情绪状态，获得有价值的反馈，并从中获得成长。
+          </Typography>
+        </Paper>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+        {/* 右侧：视频录制区域 */}
+        <Paper sx={{ p: 2, mb: 2, flex: { xs: '1', md: '0.55' } }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           <Box sx={{ width: '100%', maxWidth: 640, height: 'auto', bgcolor: '#f0f0f0', borderRadius: 1, position: 'relative' }}>
             <video 
               ref={videoRef} 
@@ -317,9 +369,18 @@ export default function Step2Record({ onComplete }: Step2RecordProps) {
           )}
           
           {compressionStatus && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <CircularProgress size={24} />
-              <Typography>{compressionStatus}</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%', mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                <CircularProgress size={24} />
+                <Typography>{compressionStatus}</Typography>
+              </Box>
+              {conversionProgress > 0 && (
+                <LinearProgress 
+                  variant="determinate" 
+                  value={conversionProgress * 100} 
+                  sx={{ width: '100%', height: 8, borderRadius: 1 }} 
+                />
+              )}
             </Box>
           )}
           
@@ -343,7 +404,8 @@ export default function Step2Record({ onComplete }: Step2RecordProps) {
             </Box>
           )}
         </Box>
-      </Paper>
+        </Paper>
+      </Box>
     </Box>
   );
 } 

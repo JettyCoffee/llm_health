@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
@@ -84,22 +84,22 @@ export default function Home() {
   const advantages = [
     {
       title: '实时分析',
-      description: '基于多模态数据的实时心理状态分析，精准把握情绪变化和潜在风险，为用户提供即时反馈',
+      description: '基于多模态数据的实时心理状态分析，精准把握情绪变化和潜在风险',
       icon: <AccessTimeIcon fontSize="large" color="info" />,
     },
     {
       title: '隐私保护',
-      description: '严格的数据加密和隐私保护机制，确保用户个人信息和心理数据安全，保障用户使用过程中的信息安全',
+      description: '严格的数据加密和隐私保护机制，确保用户个人信息和心理数据安全',
       icon: <SecurityIcon fontSize="large" color="info" />,
     },
     {
       title: '个性化服务',
-      description: '根据用户特点和需求提供定制化心理评估和干预建议，提高服务针对性，实现个人化心理健康管理',
+      description: '根据用户特点和需求提供定制化心理评估和干预建议，提高服务针对性',
       icon: <PersonalizationIcon fontSize="large" color="info" />,
     },
     {
       title: '专业支持',
-      description: '结合心理学专业知识和AI技术，提供科学、系统的心理健康解决方案，帮助用户建立和维护良好心态',
+      description: '结合心理学专业知识和AI技术，提供科学、系统的心理健康解决方案',
       icon: <SupportIcon fontSize="large" color="info" />,
     },
   ];
@@ -724,14 +724,14 @@ export default function Home() {
               </Typography>
             </RevealOnScroll>
             
-            <Grid container spacing={4}>
+            <Grid container spacing={4} alignItems="stretch">
               {advantages.map((advantage, index) => (
                 <Grid item xs={12} sm={6} md={3} key={index}>
                   <RevealOnScroll threshold={0.1} delay={index * 0.1}>
                     <HoverEffect scale={1.03} shadow={true}>
                       <Card sx={{ 
                         height: '100%',
-                        minHeight: '250px',
+                        minHeight: '280px',
                         borderRadius: '16px',
                         boxShadow: '0 10px 20px rgba(0, 0, 0, 0.05)',
                         border: '1px solid rgba(161, 98, 232, 0.1)',
@@ -741,35 +741,39 @@ export default function Home() {
                           boxShadow: '0 15px 30px rgba(161, 98, 232, 0.15)',
                         },
                         display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start'
+                        flexDirection: 'column'
                       }}>
                         <CardContent sx={{ 
                           p: 3,
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          textAlign: 'center' 
+                          textAlign: 'center',
+                          height: '100%'
                         }}>
                           <Box sx={{
                             backgroundColor: 'rgba(95, 90, 246, 0.08)',
                             borderRadius: '50%',
-                            p: 2,
-                            mb: 2,
+                            p: 2.5,
+                            mb: 3,
+                            mt: 1,
                             display: 'flex',
                             justifyContent: 'center',
                             alignItems: 'center',
                             width: 80,
                             height: 80
                           }}>
-                            {advantage.icon}
+                            {React.cloneElement(advantage.icon, { 
+                              fontSize: "large", 
+                              style: { fontSize: 36 } 
+                            })}
                           </Box>
                           <Typography 
                             variant="h6" 
                             component="h3" 
                             sx={{ 
                               fontWeight: 700,
-                              mb: 1.5,
+                              mb: 2,
                               color: 'var(--primary-dark)'
                             }}
                           >
@@ -780,7 +784,8 @@ export default function Home() {
                             color="text.secondary"
                             sx={{ 
                               lineHeight: 1.7,
-                              letterSpacing: '0.3px'
+                              letterSpacing: '0.3px',
+                              flex: '1 1 auto'
                             }}
                           >
                             {advantage.description}
