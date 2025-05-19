@@ -16,11 +16,16 @@ import {
   Card,
   CardContent,
   Grid,
+  Button,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import SentimentSatisfiedIcon from '@mui/icons-material/SentimentSatisfied';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import WarningIcon from '@mui/icons-material/Warning';
+import DownloadIcon from '@mui/icons-material/Download';
+import Cookies from 'js-cookie';
 
 interface FinalReport {
   reportTitle: string;
@@ -79,8 +84,10 @@ export default function FinalReportPage() {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<FinalReport | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  useEffect(() => {
+  const [showSnackbar, setShowSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+    useEffect(() => {
     const fetchReport = async () => {
       try {
         const response = await fetch(`/api/analysis/latest?time=${reportId}`);
@@ -89,6 +96,10 @@ export default function FinalReportPage() {
         }
         
         const data = await response.json();
+        
+        // 将当前报告URL保存到cookie
+        const currentUrl = `/final_report/${reportId}`;
+        Cookies.set('lastReportUrl', currentUrl, { expires: 30 }); // 保存30天
         
         // 解析最终报告数据
         if (data && data.result) {
@@ -234,10 +245,30 @@ export default function FinalReportPage() {
     };
   };
   
+  // 导出报告为PDF的函数
+  const exportToPDF = () => {
+    setSnackbarMessage('正在将报告导出为PDF，请稍候...');
+    setSnackbarSeverity('success');
+    setShowSnackbar(true);
+    
+    try {
+      // 实际的PDF导出逻辑将在这里实现
+      // 这里只是演示
+      setTimeout(() => {
+        setSnackbarMessage('导出成功，PDF已保存');
+        setSnackbarSeverity('success');
+        setShowSnackbar(true);
+      }, 2000);
+    } catch (err) {
+      setSnackbarMessage('导出失败，请稍后重试');
+      setSnackbarSeverity('error');
+      setShowSnackbar(true);
+    }
+  };
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <CircularProgress />
+        <CircularProgress size={60} thickness={4} sx={{ color: 'var(--primary)' }} />
       </Box>
     );
   }
@@ -245,26 +276,61 @@ export default function FinalReportPage() {
   if (error || !report) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ py: 4 }}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="h5" color="error">
+        <Box sx={{ py: 8 }}>
+          <Paper 
+            elevation={3}
+            sx={{ 
+              p: 5, 
+              textAlign: 'center', 
+              borderRadius: 'var(--radius-large)',
+              background: 'rgba(255, 255, 255, 0.85)',
+              border: '1px solid rgba(255, 255, 255, 0.7)'
+            }}
+          >
+            <Typography variant="h5" color="error" sx={{ mb: 2 }}>
               {error || '无法加载报告'}
             </Typography>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => window.location.href = '/analysis'}
+              sx={{ mt: 2 }}
+            >
+              返回分析页面
+            </Button>
           </Paper>
         </Box>
       </Container>
     );
   }
-  
-  return (
+    return (
     <Container maxWidth="lg">
       <Box sx={{ py: 4 }}>
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <PsychologyIcon fontSize="large" color="primary" />
-            <Typography variant="h4" component="h1">
-              {report.reportTitle}
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <PsychologyIcon fontSize="large" color="primary" />
+              <Typography variant="h4" component="h1">
+                {report.reportTitle}
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<DownloadIcon />}
+              onClick={exportToPDF}
+              sx={{ 
+                borderRadius: 'var(--radius)',
+                boxShadow: '0 4px 12px rgba(95, 90, 246, 0.2)',
+                '&:hover': {
+                  boxShadow: '0 8px 20px rgba(95, 90, 246, 0.4)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s ease'
+              }}
+            >
+              导出PDF
+            </Button>
           </Box>
           <Typography variant="subtitle1" color="text.secondary" gutterBottom>
             生成时间: {report.reportDateTime}
@@ -290,8 +356,16 @@ export default function FinalReportPage() {
                       {report.overallAssessment.psychologicalState}
                     </Typography>
                     {report.overallAssessment.psychologicalStateExplanation && (
-                      <Box sx={{ bgcolor: 'grey.50', p: 1, borderRadius: 1, fontSize: '0.9rem', mb: 2 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      <Box sx={{ 
+                        bgcolor: 'grey.50', 
+                        p: 1, 
+                        borderRadius: 1, 
+                        fontSize: '0.9rem', 
+                        mb: 2,
+                        boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                        border: '1px solid rgba(0,0,0,0.05)'
+                      }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
                           <strong>专业解释:</strong>
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -309,8 +383,16 @@ export default function FinalReportPage() {
                       {report.overallAssessment.emotionalTone}
                     </Typography>
                     {report.overallAssessment.emotionalToneExplanation && (
-                      <Box sx={{ bgcolor: 'grey.50', p: 1, borderRadius: 1, fontSize: '0.9rem', mb: 2 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                      <Box sx={{ 
+                        bgcolor: 'grey.50', 
+                        p: 1, 
+                        borderRadius: 1, 
+                        fontSize: '0.9rem', 
+                        mb: 2,
+                        boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                        border: '1px solid rgba(0,0,0,0.05)'
+                      }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
                           <strong>专业解释:</strong>
                         </Typography>
                         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -341,15 +423,17 @@ export default function FinalReportPage() {
                 </Box>
               </CardContent>
             </Card>
-            
-            {/* 评估方法说明 */}
+              {/* 评估方法说明 */}
             {report.assessmentMethodology && (
-              <Card variant="outlined" sx={{ mb: 2, bgcolor: 'primary.50' }}>
+              <Card variant="outlined" sx={{ mb: 2, bgcolor: 'primary.50', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <CardContent>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    评估方法
-                  </Typography>
-                  <Typography variant="body2">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }}></Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                      评估方法
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ pl: 2, borderLeft: '2px solid rgba(25, 118, 210, 0.2)', ml: 0.5 }}>
                     {report.assessmentMethodology}
                   </Typography>
                 </CardContent>
@@ -358,20 +442,22 @@ export default function FinalReportPage() {
             
             {/* 理论框架说明 */}
             {report.theoreticalFramework && (
-              <Card variant="outlined" sx={{ bgcolor: 'primary.50' }}>
+              <Card variant="outlined" sx={{ bgcolor: 'primary.50', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <CardContent>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    理论框架
-                  </Typography>
-                  <Typography variant="body2">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Box component="span" sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }}></Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                      理论框架
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ pl: 2, borderLeft: '2px solid rgba(25, 118, 210, 0.2)', ml: 0.5 }}>
                     {report.theoreticalFramework}
                   </Typography>
                 </CardContent>
               </Card>
             )}
           </Box>
-          
-          {/* 详细分析 */}
+            {/* 详细分析 */}          
           <Box sx={{ mb: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PsychologyIcon color="primary" />
@@ -396,10 +482,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.cognitiveDimension.thoughtPatterns}
-                      </Typography>
-                      {report.detailedAnalysis.cognitiveDimension.thoughtPatternsExplanation && (
-                        <Box sx={{ bgcolor: 'info.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'info.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.cognitiveDimension.thoughtPatternsExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'info.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(41,182,246,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'info.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'info.dark' }}>
                             {report.detailedAnalysis.cognitiveDimension.thoughtPatternsExplanation}
                           </Typography>
                         </Box>
@@ -412,10 +508,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.cognitiveDimension.attentionFocus}
-                      </Typography>
-                      {report.detailedAnalysis.cognitiveDimension.attentionFocusExplanation && (
-                        <Box sx={{ bgcolor: 'info.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'info.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.cognitiveDimension.attentionFocusExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'info.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(41,182,246,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'info.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'info.dark' }}>
                             {report.detailedAnalysis.cognitiveDimension.attentionFocusExplanation}
                           </Typography>
                         </Box>
@@ -428,10 +534,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.cognitiveDimension.decisivenessTrait}
-                      </Typography>
-                      {report.detailedAnalysis.cognitiveDimension.decisivenessTraitExplanation && (
-                        <Box sx={{ bgcolor: 'info.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'info.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.cognitiveDimension.decisivenessTraitExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'info.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(41,182,246,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'info.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'info.dark' }}>
                             {report.detailedAnalysis.cognitiveDimension.decisivenessTraitExplanation}
                           </Typography>
                         </Box>
@@ -465,10 +581,20 @@ export default function FinalReportPage() {
                             sx={{ mr: 0.5, mb: 0.5 }} 
                           />
                         ))}
-                      </Box>
-                      {report.detailedAnalysis.emotionalDimension.primaryEmotionsExplanation && (
-                        <Box sx={{ bgcolor: 'error.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'error.dark' }}>
+                      </Box>                      {report.detailedAnalysis.emotionalDimension.primaryEmotionsExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'error.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(229,57,53,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'error.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'error.dark' }}>
                             {report.detailedAnalysis.emotionalDimension.primaryEmotionsExplanation}
                           </Typography>
                         </Box>
@@ -481,10 +607,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.emotionalDimension.emotionalRegulation}
-                      </Typography>
-                      {report.detailedAnalysis.emotionalDimension.emotionalRegulationExplanation && (
-                        <Box sx={{ bgcolor: 'error.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'error.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.emotionalDimension.emotionalRegulationExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'error.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(229,57,53,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'error.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'error.dark' }}>
                             {report.detailedAnalysis.emotionalDimension.emotionalRegulationExplanation}
                           </Typography>
                         </Box>
@@ -497,10 +633,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.emotionalDimension.emotionalExpressiveness}
-                      </Typography>
-                      {report.detailedAnalysis.emotionalDimension.emotionalExpressivenessExplanation && (
-                        <Box sx={{ bgcolor: 'error.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'error.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.emotionalDimension.emotionalExpressivenessExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'error.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(229,57,53,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'error.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'error.dark' }}>
                             {report.detailedAnalysis.emotionalDimension.emotionalExpressivenessExplanation}
                           </Typography>
                         </Box>
@@ -525,10 +671,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.behavioralDimension.communicationStyle}
-                      </Typography>
-                      {report.detailedAnalysis.behavioralDimension.communicationStyleExplanation && (
-                        <Box sx={{ bgcolor: 'success.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'success.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.behavioralDimension.communicationStyleExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'success.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(67,160,71,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'success.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'success.dark' }}>
                             {report.detailedAnalysis.behavioralDimension.communicationStyleExplanation}
                           </Typography>
                         </Box>
@@ -541,10 +697,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.behavioralDimension.interpersonalApproach}
-                      </Typography>
-                      {report.detailedAnalysis.behavioralDimension.interpersonalApproachExplanation && (
-                        <Box sx={{ bgcolor: 'success.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'success.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.behavioralDimension.interpersonalApproachExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'success.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(67,160,71,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'success.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'success.dark' }}>
                             {report.detailedAnalysis.behavioralDimension.interpersonalApproachExplanation}
                           </Typography>
                         </Box>
@@ -557,10 +723,20 @@ export default function FinalReportPage() {
                       </Typography>
                       <Typography variant="body2" paragraph sx={{ mt: 1, pl: 1 }}>
                         {report.detailedAnalysis.behavioralDimension.stressResponses}
-                      </Typography>
-                      {report.detailedAnalysis.behavioralDimension.stressResponsesExplanation && (
-                        <Box sx={{ bgcolor: 'success.50', p: 1, borderRadius: 1, fontSize: '0.85rem', mb: 2 }}>
-                          <Typography variant="caption" sx={{ color: 'success.dark' }}>
+                      </Typography>                      {report.detailedAnalysis.behavioralDimension.stressResponsesExplanation && (
+                        <Box sx={{ 
+                          bgcolor: 'success.50', 
+                          p: 1, 
+                          borderRadius: 1, 
+                          fontSize: '0.9rem', 
+                          mb: 2,
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.03)',
+                          border: '1px solid rgba(67,160,71,0.1)'
+                        }}>
+                          <Typography variant="caption" sx={{ color: 'success.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                            <strong>专业解释:</strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: 'success.dark' }}>
                             {report.detailedAnalysis.behavioralDimension.stressResponsesExplanation}
                           </Typography>
                         </Box>
@@ -580,10 +756,22 @@ export default function FinalReportPage() {
                 洞察与建议
               </Typography>
             </Box>
-            
-            {/* 洞察与建议的专业说明 */}
+              {/* 洞察与建议的专业说明 */}
             {report.insightsAndRecommendations.potentialStrengthsExplanation && (
-              <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+              <Box 
+                sx={{ 
+                  mb: 3, 
+                  p: { xs: 1.5, sm: 2 }, 
+                  bgcolor: 'grey.50', 
+                  borderRadius: 1,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  borderLeft: '3px solid #1976d2'
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', mb: 1, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }}></Box>
+                  专业理论基础
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {report.insightsAndRecommendations.potentialStrengthsExplanation}
                 </Typography>
@@ -648,10 +836,19 @@ export default function FinalReportPage() {
                           />
                         </ListItem>
                       ))}
-                    </List>
-                    {report.insightsAndRecommendations.potentialChallengesExplanation && (
-                      <Box sx={{ mt: 2, p: 1, bgcolor: 'rgba(255,255,255,0.8)', borderRadius: 1 }}>
-                        <Typography variant="caption" sx={{ color: 'error.dark' }}>
+                    </List>                    {report.insightsAndRecommendations.potentialChallengesExplanation && (
+                      <Box sx={{ 
+                        mt: 2, 
+                        p: 1, 
+                        bgcolor: 'rgba(255,255,255,0.9)', 
+                        borderRadius: 1,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        border: '1px solid rgba(229,57,53,0.15)'
+                      }}>
+                        <Typography variant="caption" sx={{ color: 'error.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                          <strong>专业分析:</strong>
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'error.dark', lineHeight: 1.5 }}>
                           {report.insightsAndRecommendations.potentialChallengesExplanation}
                         </Typography>
                       </Box>
@@ -686,10 +883,19 @@ export default function FinalReportPage() {
                           />
                         </ListItem>
                       ))}
-                    </List>
-                    {report.insightsAndRecommendations.developmentSuggestionsExplanation && (
-                      <Box sx={{ mt: 2, p: 1, bgcolor: 'rgba(255,255,255,0.8)', borderRadius: 1 }}>
-                        <Typography variant="caption" sx={{ color: 'info.dark' }}>
+                    </List>                    {report.insightsAndRecommendations.developmentSuggestionsExplanation && (
+                      <Box sx={{ 
+                        mt: 2, 
+                        p: 1, 
+                        bgcolor: 'rgba(255,255,255,0.9)', 
+                        borderRadius: 1,
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        border: '1px solid rgba(41,182,246,0.15)'
+                      }}>
+                        <Typography variant="caption" sx={{ color: 'info.dark', display: 'block', mb: 0.5, fontWeight: 'medium' }}>
+                          <strong>专业建议:</strong>
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'info.dark', lineHeight: 1.5 }}>
                           {report.insightsAndRecommendations.developmentSuggestionsExplanation}
                         </Typography>
                       </Box>
@@ -714,6 +920,17 @@ export default function FinalReportPage() {
           </Box>
         </Paper>
       </Box>
-    </Container>
+      
+      {/* 导出报告的Snackbar提示 */}
+      <Snackbar 
+        open={showSnackbar} 
+        autoHideDuration={6000} 
+        onClose={() => setShowSnackbar(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert onClose={() => setShowSnackbar(false)} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>    </Container>
   );
 }

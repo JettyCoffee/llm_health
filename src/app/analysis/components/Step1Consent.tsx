@@ -12,7 +12,7 @@ export default function Step1Consent({ onAgree }: Step1ConsentProps) {
       
       <Box sx={{ mb: 3 }}>
         <Typography variant="h6" gutterBottom>
-          视频录制要求：
+          数据采集要求：
         </Typography>
         <Typography component="div" sx={{ mb: 2 }}>
           <Typography variant="body1">
@@ -22,6 +22,9 @@ export default function Step1Consent({ onAgree }: Step1ConsentProps) {
             • 视频将捕捉您的面部表情和语音变化
             • 所采集的音视频数据将用于多模态情绪分析
             • 建议您在安静、光线充足的环境中进行录制
+          </Typography>
+          <Typography variant="body1" sx={{ mt: 1 }}>
+            在最后一步您还可以填写您自己对自己情绪状态的描述
           </Typography>
         </Typography>
       </Box>
@@ -37,7 +40,7 @@ export default function Step1Consent({ onAgree }: Step1ConsentProps) {
           size="large"
           onClick={onAgree}
         >
-          我同意并开始视频录制
+          我同意并开始数据采集
         </Button>
       </Box>
     </Box>

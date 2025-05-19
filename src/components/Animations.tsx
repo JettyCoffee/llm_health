@@ -418,35 +418,78 @@ export const AnimatedBackground = ({
   className?: string;
 }) => {
   return (
-    <div className={`relative overflow-hidden ${className}`}>
-      <div className="absolute inset-0">
+    <div className={`relative overflow-hidden min-h-screen ${className}`}>
+      {/* 主要渐变背景 */}
+      <div className="absolute inset-0 opacity-80">
         <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#5f5af6" stopOpacity="0.1"/>
-              <stop offset="100%" stopColor="#a162e8" stopOpacity="0.1"/>
+              <stop offset="0%" stopColor="#5f5af6" stopOpacity="0.08"/>
+              <stop offset="50%" stopColor="#ffffff" stopOpacity="0.03"/>
+              <stop offset="100%" stopColor="#a162e8" stopOpacity="0.08"/>
             </linearGradient>
+            <pattern id="pattern1" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <rect width="100%" height="100%" fill="url(#grad1)"/>
+              <path d="M0 20 L40 20" stroke="rgba(95, 90, 246, 0.03)" strokeWidth="1"/>
+              <path d="M20 0 L20 40" stroke="rgba(161, 98, 232, 0.03)" strokeWidth="1"/>
+            </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grad1)" />
+          <rect width="100%" height="100%" fill="url(#pattern1)" />
         </svg>
       </div>
+      
+      {/* 动态光晕效果 */}
       <motion.div
         className="absolute inset-0"
         style={{
-          backgroundImage: `radial-gradient(circle at 10% 10%, rgba(95, 90, 246, 0.1) 0%, transparent 50%),
-                            radial-gradient(circle at 90% 90%, rgba(161, 98, 232, 0.1) 0%, transparent 50%)`,
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, rgba(95, 90, 246, 0.12) 0%, transparent 40%),
+            radial-gradient(circle at 80% 70%, rgba(161, 98, 232, 0.12) 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 30%)
+          `,
           opacity: 0.7
         }}
         animate={{
-          backgroundPosition: ['0% 0%, 100% 100%', '100% 0%, 0% 100%'],
+          backgroundPosition: ['0% 0%, 100% 100%, 50% 50%', '100% 0%, 0% 100%, 60% 40%'],
         }}
         transition={{
-          duration: 20,
+          duration: 25,
           repeat: Infinity,
           ease: 'linear',
           repeatType: 'reverse'
         }}
       />
+      
+      {/* 浮动装饰元素 */}
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full opacity-20"
+            style={{
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              width: `${Math.random() * 100 + 50}px`,
+              height: `${Math.random() * 100 + 50}px`,
+              background: i % 2 === 0 
+                ? 'linear-gradient(45deg, rgba(95, 90, 246, 0.2), rgba(95, 90, 246, 0.1))'
+                : 'linear-gradient(45deg, rgba(161, 98, 232, 0.2), rgba(161, 98, 232, 0.1))',
+              filter: 'blur(8px)'
+            }}
+            animate={{
+              y: [0, Math.random() * 30 - 15, 0],
+              x: [0, Math.random() * 30 - 15, 0],
+              scale: [1, Math.random() * 0.2 + 0.9, 1]
+            }}
+            transition={{
+              duration: Math.random() * 15 + 10,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+        ))}
+      </div>
+      
       <div className="relative">{children}</div>
     </div>
   );

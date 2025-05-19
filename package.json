@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate"
+    "lint": "next lint"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -21,9 +20,11 @@
     "@mui/material": "^7.1.0",
     "@mui/material-nextjs": "^7.1.0",
     "@supabase/supabase-js": "^2.49.4",
+    "@types/js-cookie": "^3.0.6",
     "@types/recharts": "^1.8.29",
     "@wavesurfer/react": "^1.0.11",
     "framer-motion": "^12.12.1",
+    "js-cookie": "^3.0.5",
     "lottie-react": "^2.4.1",
     "next": "15.3.2",
     "openai": "^4.98.0",
@@ -41,6 +42,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",

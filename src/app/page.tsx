@@ -726,7 +726,7 @@ export default function Home() {
             
             <Grid container spacing={4} alignItems="stretch">
               {advantages.map((advantage, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
+                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
                   <RevealOnScroll threshold={0.1} delay={index * 0.1}>
                     <HoverEffect scale={1.03} shadow={true}>
                       <Card sx={{ 

@@ -16,6 +16,7 @@ import Step3Preview from './components/Step3Preview';
 import { analyzeData } from './utils/analyzeData';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Cookies from 'js-cookie';
 import { 
   PageTransition, 
   FadeIn, 
@@ -187,8 +188,12 @@ export default function AnalysisPage() {
       // 添加一点延迟以显示完成状态
       setTimeout(() => {
         if (result?.time !== undefined) {
+          // 保存报告URL到cookie
+          const reportUrl = `/final_report/${result.time}`;
+          Cookies.set('lastReportUrl', reportUrl, { expires: 30 }); // 保存30天
+          
           // 直接跳转到最终报告页面
-          router.push(`/final_report/${result.time}`);
+          router.push(reportUrl);
         } else {
           throw new Error('无法获取报告ID');
         }
@@ -241,7 +246,7 @@ export default function AnalysisPage() {
                   mb: 3
                 }}
               >
-                AI 心理分析
+                MindGuide 数据采集
               </Typography>
             </SlideUp>
             
@@ -251,10 +256,13 @@ export default function AnalysisPage() {
                 sx={{ 
                   p: 4, 
                   borderRadius: 'var(--radius-large)',
-                  background: 'var(--card-bg)',
+                  background: 'rgba(255, 255, 255, 0.85)',
+                  backdropFilter: 'blur(10px)',
                   boxShadow: '0 8px 32px var(--card-shadow)',
                   overflow: 'hidden',
-                  position: 'relative'
+                  position: 'relative',
+                  border: '1px solid rgba(255, 255, 255, 0.7)',
+                  transition: 'all 0.3s ease'
                 }}
               >
                 <Box 

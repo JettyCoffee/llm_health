@@ -22,7 +22,10 @@ export const AdvancedFadeIn = ({
 }) => {
   const controls = useAnimation();
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, threshold });
+  const isInView = useInView(ref, { 
+    once: true,
+    amount: threshold // 使用amount代替threshold
+  });
 
   useEffect(() => {
     if (isInView) {
@@ -89,7 +92,9 @@ export const SpringAnimation = ({
             damping
           }
         },
-        hidden: from
+        hidden: {
+          ...from
+        }
       }}
       className={className}
     >
@@ -293,10 +298,9 @@ export const RevealOnScroll = ({
   className?: string;
 }) => {
   const controls = useAnimation();
-  const ref = useRef(null);
-  const isInView = useInView(ref, { 
+  const ref = useRef(null);  const isInView = useInView(ref, { 
     once: true,
-    threshold
+    amount: threshold
   });
   
   // 根据方向设置初始位置
