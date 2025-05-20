@@ -5,8 +5,9 @@ interface Step1ConsentProps {
 }
 
 export default function Step1Consent({ onAgree }: Step1ConsentProps) {
-  return (
-    <Box>      <Alert severity="info" sx={{ mb: 3 }}>
+  return (    
+    <Box>
+      <Alert severity="info" sx={{ mb: 3, '& .MuiAlert-message': { width: '100%' } }}>
         为了进行有效的情绪状态分析，我们需要您的配合：
       </Alert>
       
@@ -25,11 +26,10 @@ export default function Step1Consent({ onAgree }: Step1ConsentProps) {
           </Typography>
           <Typography variant="body1" sx={{ mt: 1 }}>
             在最后一步您还可以填写您自己对自己情绪状态的描述
-          </Typography>
-        </Typography>
+          </Typography>        </Typography>
       </Box>
 
-      <Alert severity="success" sx={{ mb: 3 }}>
+      <Alert severity="success" sx={{ mb: 3, '& .MuiAlert-message': { width: '100%' } }}>
         所有录制的数据仅用于本次情绪分析研究，不会被永久存储或用于其他用途。您的隐私安全是我们的首要考虑。
       </Alert>
 

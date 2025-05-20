@@ -459,30 +459,38 @@ export const AnimatedBackground = ({
           repeatType: 'reverse'
         }}
       />
-      
-      {/* 浮动装饰元素 */}
+        {/* 浮动装饰元素 */}
       <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
+        {[
+          { top: '13.89%', left: '42.51%', width: '112.94px', height: '147.31px', type: 0 },
+          { top: '96.24%', left: '13.68%', width: '149.39px', height: '129.40px', type: 1 },
+          { top: '88.55%', left: '73.17%', width: '146.97px', height: '57.40px', type: 0 },
+          { top: '11.04%', left: '48.17%', width: '93.56px', height: '87.49px', type: 1 },
+          { top: '0.75%', left: '89.32%', width: '93.32px', height: '133.14px', type: 0 },
+          { top: '67.62%', left: '44.31%', width: '70.00px', height: '52.47px', type: 1 },
+          { top: '62.69%', left: '37.24%', width: '54.98px', height: '136.31px', type: 0 },
+          { top: '10.06%', left: '95.28%', width: '83.75px', height: '59.11px', type: 1 }
+        ].map((bubble, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full opacity-20"
             style={{
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              width: `${Math.random() * 100 + 50}px`,
-              height: `${Math.random() * 100 + 50}px`,
-              background: i % 2 === 0 
+              top: bubble.top,
+              left: bubble.left,
+              width: bubble.width,
+              height: bubble.height,
+              background: bubble.type === 0 
                 ? 'linear-gradient(45deg, rgba(95, 90, 246, 0.2), rgba(95, 90, 246, 0.1))'
                 : 'linear-gradient(45deg, rgba(161, 98, 232, 0.2), rgba(161, 98, 232, 0.1))',
               filter: 'blur(8px)'
             }}
             animate={{
-              y: [0, Math.random() * 30 - 15, 0],
-              x: [0, Math.random() * 30 - 15, 0],
-              scale: [1, Math.random() * 0.2 + 0.9, 1]
+              y: [0, (i % 3 + 1) * 10 - 15, 0],
+              x: [0, (i % 2 + 1) * 10 - 15, 0],
+              scale: [1, 0.95 + (i % 5) * 0.01, 1]
             }}
             transition={{
-              duration: Math.random() * 15 + 10,
+              duration: 10 + i % 5 * 2,
               repeat: Infinity,
               ease: "easeInOut"
             }}

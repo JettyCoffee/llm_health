@@ -24,6 +24,7 @@ import {
   AnimatedBackground,
   PopIn
 } from '@/components/Animations';
+import ToolbarSpacer from '@/components/ToolbarSpacer';
 
 // 导入AnalysisResult类型
 import type { AnalysisResult } from './utils/analyzeData';
@@ -213,7 +214,7 @@ export default function AnalysisPage() {
       case 0:
         return <FadeIn><Step1Consent onAgree={handleStep1Complete} /></FadeIn>;
       case 1:
-        return <SlideUp><Step2Record onComplete={handleStep2Complete} /></SlideUp>;
+        return <SlideUp><Step2Record onComplete={handleStep2Complete} onBack={() => setActiveStep(0)} /></SlideUp>;
       case 2:
         return recordedVideo ? (
           <PopIn>
@@ -232,24 +233,17 @@ export default function AnalysisPage() {
   return (
     <PageTransition>
       <AnimatedBackground>
-        <Container maxWidth="lg">
-          <Box sx={{ py: 4 }}>
-            <SlideUp delay={0.2}>
-              <Typography 
-                variant="h4" 
-                component="h1" 
-                gutterBottom 
-                className="gradient-text"
-                sx={{ 
-                  fontWeight: 'bold', 
-                  textAlign: 'center',
-                  mb: 3
-                }}
-              >
-                MindGuide 数据采集
-              </Typography>
-            </SlideUp>
-            
+        <ToolbarSpacer />
+        <Container 
+          maxWidth="lg"
+          sx={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            py: 4
+          }}
+        >
             <FadeIn delay={0.4}>
               <Paper 
                 elevation={6}
@@ -385,8 +379,7 @@ export default function AnalysisPage() {
                 )}
               </Paper>
             </FadeIn>
-          </Box>
-        </Container>
+          </Container>
       </AnimatedBackground>
     </PageTransition>
   );

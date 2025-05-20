@@ -4,11 +4,15 @@ import { useState, useRef, useEffect } from 'react';
 import { Box, Button, Typography, Paper, Alert, CircularProgress, LinearProgress } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import StopIcon from '@mui/icons-material/Stop';
+import ReplayIcon from '@mui/icons-material/Replay';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import useVideoProcessor from '../utils/useVideoProcessor';
 
 interface Step2RecordProps {
   onComplete: (video: File) => void;
+  onBack?: () => void;
 }
 
 // 最大录制时长（秒）
@@ -16,7 +20,7 @@ const MAX_RECORDING_TIME = 30;
 // 最大文件大小（字节）
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-export default function Step2Record({ onComplete }: Step2RecordProps) {
+export default function Step2Record({ onComplete, onBack }: Step2RecordProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideo, setRecordedVideo] = useState<File | null>(null);
   const [recordingError, setRecordingError] = useState<string | null>(null);
@@ -252,159 +256,257 @@ export default function Step2Record({ onComplete }: Step2RecordProps) {
 
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography paragraph>
-        请对着摄像头录制视频（最长 {MAX_RECORDING_TIME} 秒），或上传MP4格式的视频文件。
-      </Typography>
-      
-      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, mb: 2 }}>
-        {/* 左侧：朗读文字区域 */}
-        <Paper sx={{ p: 2, bgcolor: '#f5f5f5', flex: { xs: '1', md: '0.45' }, height: 'fit-content' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        mb: 3,
+        position: 'relative'
+      }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          sx={{ 
+            position: 'absolute', 
+            left: 0,
+            borderRadius: 2,
+            px: 2
+          }}
+          onClick={onBack ? onBack : () => window.history.back()}
+          startIcon={<ArrowBackIcon />}
+        >
+          返回上一步
+        </Button>
+        {!recordedVideo ? (
           <Typography 
             paragraph 
             sx={{ 
-              p: 2, 
-              bgcolor: '#fff', 
-              fontWeight: 'medium',
-              lineHeight: 1.8,
-              maxHeight: '450px',
-              overflowY: 'auto'
+              bgcolor: 'primary.light',
+              color: 'white',
+              px: 3,
+              py: 1.5,
+              borderRadius: 4,
+              textAlign: 'center',
+              maxWidth: '90%',
+              m: 0,
+              boxShadow: '0px 2px 4px rgba(0,0,0,0.1)'
             }}
           >
-            今天的天气很好，阳光明媚，让人心情愉快。我感到平静而满足，就像在宁静的湖边散步一样。
-            
-            想象一下，当我得知自己考试通过的那一刻，我简直太激动了！我立刻拿起手机，激动地告诉了所有朋友！这是我付出那么多努力后终于得到的回报，我感到无比自豪和兴奋！这种成就感真是难以言表！我恨不得马上冲出去大声喊出来，让全世界都知道我成功了！这一切的努力都是值得的！
-            
-            回到现实，我深呼吸，慢慢平静下来。生活中有起有落，这很正常。我学会了接受失败，也懂得了欣赏成功的喜悦。无论遇到什么困难，我都会坦然面对，理性分析，寻找解决方案。平静和耐心是我面对挑战的态度。这些经历让我成长，让我更加坚强。
-            
-            总的来说，我希望通过这次测试了解自己的情绪状态，获得有价值的反馈，并从中获得成长。
+            请阅读左侧的文字，并对着摄像头录制视频或上传视频文件，视频最长 {MAX_RECORDING_TIME} 秒。
           </Typography>
-        </Paper>
+        ) : (
+          <Alert 
+            severity="success" 
+            sx={{ 
+              textAlign: 'center',
+              maxWidth: '90%',
+              m: 0,
+              borderRadius: 4,
+              boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
+              '& .MuiAlert-message': { width: '100%' }
+            }}
+          >
+            视频{recordedVideo.name.includes('recording') ? '录制' : '上传'}完成，请检查预览并确认继续
+          </Alert>
+        )}
+      </Box>
+      
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gridTemplateRows: { md: 'minmax(400px, auto)' }, gap: 2, mb: 2 }}>
+        {/* 左侧：朗读文字区域 */}
+        <Box sx={{ 
+          bgcolor: '#f5f5f5', 
+          borderRadius: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          height: '100%',
+        }}>
+          <Box sx={{ 
+            p: 2, 
+            flex: '1',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            <Typography 
+              paragraph 
+              sx={{ 
+                p: 2, 
+                bgcolor: '#fff', 
+                borderRadius: 1,
+                fontWeight: 'medium',
+                lineHeight: 1.8,
+                overflowY: 'auto',
+                m: 0,
+                flex: 1
+              }}
+            >
+              今天的天气很好，阳光明媚，让人心情愉快。我感到平静而满足，就像在宁静的湖边散步一样。
+              
+              想象一下，当我得知自己考试通过的那一刻，我简直太激动了！我立刻拿起手机，激动地告诉了所有朋友！这是我付出那么多努力后终于得到的回报，我感到无比自豪和兴奋！这种成就感真是难以言表！我恨不得马上冲出去大声喊出来，让全世界都知道我成功了！这一切的努力都是值得的！
+              
+              回到现实，我深呼吸，慢慢平静下来。生活中有起有落，这很正常。我学会了接受失败，也懂得了欣赏成功的喜悦。无论遇到什么困难，我都会坦然面对，理性分析，寻找解决方案。平静和耐心是我面对挑战的态度。这些经历让我成长，让我更加坚强。
+              
+              总的来说，我希望通过这次测试了解自己的情绪状态，获得有价值的反馈，并从中获得成长。
+            </Typography>
+          </Box>
+        </Box>
 
         {/* 右侧：视频录制区域 */}
-        <Paper sx={{ p: 2, mb: 2, flex: { xs: '1', md: '0.55' } }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ width: '100%', maxWidth: 640, height: 'auto', bgcolor: '#f0f0f0', borderRadius: 1, position: 'relative' }}>
-            <video 
-              ref={videoRef} 
-              autoPlay 
-              playsInline
-              muted
-              style={{ width: '100%', height: 'auto', borderRadius: '4px' }} 
-            />
-            {isRecording && (
-              <Box 
-                sx={{ 
-                  position: 'absolute', 
-                  top: 10, 
-                  right: 10, 
-                  bgcolor: 'rgba(0, 0, 0, 0.6)', 
-                  color: 'white', 
-                  borderRadius: 1,
-                  px: 1,
-                  py: 0.5,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
-              >
+        <Box sx={{ 
+          bgcolor: '#f5f5f5', 
+          borderRadius: 1,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          height: '100%'
+        }}>
+          <Box sx={{ 
+            p: 2, 
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            gap: 2
+          }}>
+            <Box sx={{ 
+              flex: 1,
+              minHeight: '200px',
+              bgcolor: '#f0f0f0', 
+              borderRadius: 1, 
+              position: 'relative', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              overflow: 'hidden'
+            }}>
+              <video 
+                ref={videoRef} 
+                autoPlay={!recordedVideo}
+                playsInline
+                muted={!recordedVideo}
+                controls={!!recordedVideo}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} 
+              />
+              {isRecording && (
                 <Box 
                   sx={{ 
-                    width: 12, 
-                    height: 12, 
-                    bgcolor: 'error.main', 
-                    borderRadius: '50%',
-                    animation: 'pulse 1s infinite'
-                  }} 
-                />
-                {formatTime(recordingTime)} / {formatTime(MAX_RECORDING_TIME)}
-              </Box>
-            )}
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-            {!isRecording ? (
-              <>
-                <Button 
-                  variant="contained" 
-                  color="primary"
-                  onClick={startRecording}
-                  disabled={!!recordedVideo || !!compressionStatus}
-                  startIcon={<VideocamIcon />}
+                    position: 'absolute', 
+                    top: 10, 
+                    right: 10, 
+                    bgcolor: 'rgba(0, 0, 0, 0.6)', 
+                    color: 'white', 
+                    borderRadius: 1,
+                    px: 1,
+                    py: 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}
                 >
-                  开始录制
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={!!recordedVideo || !!compressionStatus || isRecording}
-                  startIcon={<FileUploadIcon />}
-                >
-                  上传MP4视频
-                </Button>
-                <input
-                  type="file"
-                  hidden
-                  ref={fileInputRef}
-                  accept="video/mp4"
-                  onChange={handleFileUpload}
-                />
-              </>
-            ) : (
-              <Button 
-                variant="contained" 
-                color="error"
-                onClick={stopRecording}
-                startIcon={<StopIcon />}
-              >
-                停止录制
-              </Button>
-            )}
-          </Box>
-
-          {recordingError && (
-            <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
-              {recordingError}
-            </Alert>
-          )}
-          
-          {compressionStatus && (
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, width: '100%', mt: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
-                <CircularProgress size={24} />
-                <Typography>{compressionStatus}</Typography>
-              </Box>
-              {conversionProgress > 0 && (
-                <LinearProgress 
-                  variant="determinate" 
-                  value={conversionProgress * 100} 
-                  sx={{ width: '100%', height: 8, borderRadius: 1 }} 
-                />
+                  <Box 
+                    sx={{ 
+                      width: 12, 
+                      height: 12, 
+                      bgcolor: 'error.main', 
+                      borderRadius: '50%',
+                      animation: 'pulse 1s infinite'
+                    }} 
+                  />
+                  {formatTime(recordingTime)} / {formatTime(MAX_RECORDING_TIME)}
+                </Box>
               )}
             </Box>
-          )}
-          
-          {recordedVideo && (
-            <Box sx={{ mt: 2, width: '100%' }}>
-              <Alert severity="success">
-                视频{recordedVideo.name.includes('recording') ? '录制' : '上传'}完成，
-                格式: {recordedVideo.type}, 
-                大小: {(recordedVideo.size / (1024 * 1024)).toFixed(2)}MB
-              </Alert>
-              
-              <Box sx={{ mt: 2 }}>
+
+            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
+              {!isRecording && !recordedVideo ? (
+                <>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    onClick={startRecording}
+                    disabled={!!compressionStatus}
+                    startIcon={<VideocamIcon />}
+                  >
+                    开始录制
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={!!compressionStatus}
+                    startIcon={<FileUploadIcon />}
+                  >
+                    上传视频
+                  </Button>
+                  <input
+                    type="file"
+                    hidden
+                    ref={fileInputRef}
+                    accept="video/mp4"
+                    onChange={handleFileUpload}
+                  />
+                </>
+              ) : isRecording ? (
                 <Button 
                   variant="contained" 
-                  color="primary"
-                  onClick={handleNextStep}
+                  color="error"
+                  onClick={stopRecording}
+                  startIcon={<StopIcon />}
                 >
-                  下一步
+                  停止录制
                 </Button>
-              </Box>
+              ) : recordedVideo && (
+                <>
+                  <Button 
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => {
+                      setRecordedVideo(null);
+                      if (videoRef.current) {
+                        videoRef.current.src = "";
+                      }
+                    }}
+                    startIcon={<ReplayIcon />}
+                  >
+                    重新录制
+                  </Button>
+                  <Button 
+                    variant="contained" 
+                    color="primary"
+                    onClick={handleNextStep}
+                    endIcon={<ArrowForwardIcon />}
+                  >
+                    下一步
+                  </Button>
+                </>
+              )}
             </Box>
-          )}
+
+            {recordingError && (
+              <Alert severity="error" sx={{ '& .MuiAlert-message': { width: '100%' } }}>
+                {recordingError}
+              </Alert>
+            )}
+            
+            {compressionStatus && (
+              <Box sx={{ width: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+                  <CircularProgress size={24} />
+                  <Typography>{compressionStatus}</Typography>
+                </Box>
+                {conversionProgress > 0 && (
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={conversionProgress * 100} 
+                    sx={{ width: '100%', height: 8, borderRadius: 1 }} 
+                  />
+                )}
+              </Box>
+            )}
+          </Box>
         </Box>
-        </Paper>
       </Box>
     </Box>
   );

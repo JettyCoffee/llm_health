@@ -22,10 +22,19 @@ export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // 监听滚动事件，添加滚动效果
+    // 监听滚动事件，添加滚动效果
   useEffect(() => {
     const handleScroll = () => {
+      // 页面内容太少时不改变导航栏样式
+      const documentHeight = document.documentElement.scrollHeight;
+      const viewportHeight = window.innerHeight;
+      
+      // 判断内容是否足够触发滚动
+      if (documentHeight <= viewportHeight) {
+        setScrolled(false);
+        return;
+      }
+      
       const isScrolled = window.scrollY > 10;
       if (isScrolled !== scrolled) {
         setScrolled(isScrolled);
@@ -33,6 +42,9 @@ export default function Navbar() {
     };
 
     window.addEventListener('scroll', handleScroll);
+    // 初始加载时也执行一次判断
+    handleScroll();
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, [scrolled]);
 
@@ -69,17 +81,14 @@ export default function Navbar() {
         damping: 20,
         duration: 0.8 
       }}
-    >
-      <AppBar 
+    >      <AppBar 
         position="fixed" 
-        elevation={scrolled ? 4 : 0}
+        elevation={scrolled ? 4 : 2}
         sx={{
-          background: scrolled 
-            ? 'rgba(255, 255, 255, 0.95)' 
-            : 'linear-gradient(90deg, rgba(95, 90, 246, 0.05) 0%, rgba(161, 98, 232, 0.05) 100%)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: scrolled ? '1px solid rgba(0, 0, 0, 0.05)' : 'none',
+          background: '#FFFFFF',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
           transition: 'all 0.3s ease',
+          zIndex: (theme) => theme.zIndex.drawer + 1, // 确保导航栏在其他元素之上
         }}
       >
         <Container maxWidth="lg">
@@ -122,10 +131,12 @@ export default function Navbar() {
                     letterSpacing: '0.5px',
                     textShadow: '0px 2px 5px rgba(0, 0, 0, 0.05)',
                   }}
-                >
-                  MindGuide 心理助手
-                </Typography>              </HoverEffect>
-            </Box>            {/* 导航按钮 */}
+                >                  MindGuide 心理助手
+                </Typography>
+              </HoverEffect>
+            </Box>
+            
+            {/* 导航按钮 */}
             <Box sx={{ 
               display: { xs: 'none', md: 'flex' }, 
               justifyContent: 'center', 
@@ -255,9 +266,10 @@ export default function Navbar() {
                   }}
                 >
                   历史记录
-                </Button>
-              </HoverEffect>
-            </Box>            {/* 右侧按钮 */}
+                </Button>              </HoverEffect>
+            </Box>
+            
+            {/* 右侧按钮 */}
             <Box sx={{ display: 'flex', gap: 1 }}>
               {/* 移动设备菜单按钮 */}
               <Box sx={{ display: { xs: 'block', md: 'none' } }}>
@@ -288,8 +300,7 @@ export default function Navbar() {
                   <AccountCircleIcon />
                 </IconButton>
               </Tooltip>
-              
-              <Tooltip title="设置">
+                <Tooltip title="设置">
                 <IconButton
                   size="large"
                   aria-label="settings"
@@ -302,11 +313,12 @@ export default function Navbar() {
                     }
                   }}
                 >
-                  <SettingsIcon />                </IconButton>
+                  <SettingsIcon />
+                </IconButton>
               </Tooltip>
-            </Box>
-          </Toolbar>
-        </Container>      </AppBar>
+            </Box>          </Toolbar>
+        </Container>
+      </AppBar>
       
       {/* 完全移除占位符，解决MuiBox-root mui-1w4qpt0空间问题 */}
 
@@ -315,12 +327,11 @@ export default function Navbar() {
         anchor="right"
         open={mobileMenuOpen}
         onClose={toggleMobileMenu}
-        sx={{
-          '& .MuiDrawer-paper': {
+        sx={{          '& .MuiDrawer-paper': {
             width: 280,
             borderRadius: '12px 0 0 12px',
-            backgroundImage: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.95), rgba(245, 245, 255, 0.95))',
-            boxShadow: '0 8px 32px rgba(95, 90, 246, 0.1)',
+            background: '#FFFFFF',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
           },
         }}
       >

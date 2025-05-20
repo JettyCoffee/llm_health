@@ -27,8 +27,10 @@ export default function RootLayout({
               component="main"
               sx={{
                 flexGrow: 1,
-                pt: { xs: 8, sm: 9 }, // 为导航栏留出空间
+                display: 'flex',
+                flexDirection: 'column',
                 minHeight: '100vh',
+                overflow: 'hidden', // 防止出现不必要的滚动条
               }}
             >
               {children}
