@@ -79,7 +79,7 @@ interface FinalReport {
 
 export default function FinalReportPage() {
   const params = useParams();
-  const reportId = params.reportId as string;
+  const reportId = params?.reportId as string;
   
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<FinalReport | null>(null);
@@ -244,39 +244,44 @@ export default function FinalReportPage() {
       theoreticalFramework: rawReport.theoreticalFramework || defaultReport.theoreticalFramework
     };
   };
-  
-  // 导出报告为PDF的函数
+    // 导出报告为PDF的函数
   const exportToPDF = () => {
-    setSnackbarMessage('正在将报告导出为PDF，请稍候...');
+    setSnackbarMessage('正在生成报告，请稍候...');
     setSnackbarSeverity('success');
     setShowSnackbar(true);
     
     try {
-      // 实际的PDF导出逻辑将在这里实现
-      // 这里只是演示
-      setTimeout(() => {
-        setSnackbarMessage('导出成功，PDF已保存');
-        setSnackbarSeverity('success');
-        setShowSnackbar(true);
-      }, 2000);
+      // 构造下载URL并触发下载
+      const downloadUrl = `/api/export-report?reportId=${reportId}`;
+      
+      // 创建一个暂时的a标签用于触发下载
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `心理分析报告_${reportId}.json`; // 实际环境中这将是.pdf
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 显示成功消息
+      setSnackbarMessage('报告已成功导出');
+      setSnackbarSeverity('success');
+      setShowSnackbar(true);
     } catch (err) {
       setSnackbarMessage('导出失败，请稍后重试');
       setSnackbarSeverity('error');
       setShowSnackbar(true);
     }
-  };
-  if (loading) {
+  };if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', pt: 8 }}>
         <CircularProgress size={60} thickness={4} sx={{ color: 'var(--primary)' }} />
       </Box>
     );
   }
-  
-  if (error || !report) {
+    if (error || !report) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ py: 8 }}>
+        <Box sx={{ pt: 8, pb: 4 }}>
           <Paper 
             elevation={3}
             sx={{ 
@@ -303,9 +308,9 @@ export default function FinalReportPage() {
       </Container>
     );
   }
-    return (
+  return (
     <Container maxWidth="lg">
-      <Box sx={{ py: 4 }}>
+      <Box sx={{ pt: 8, pb: 4 }}>
         <Paper sx={{ p: 3, mb: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -326,10 +331,9 @@ export default function FinalReportPage() {
                   boxShadow: '0 8px 20px rgba(95, 90, 246, 0.4)',
                   transform: 'translateY(-2px)'
                 },
-                transition: 'all 0.3s ease'
-              }}
+                transition: 'all 0.3s ease'              }}
             >
-              导出PDF
+              导出报告
             </Button>
           </Box>
           <Typography variant="subtitle1" color="text.secondary" gutterBottom>

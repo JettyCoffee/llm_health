@@ -8,6 +8,7 @@ import ReplayIcon from '@mui/icons-material/Replay';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import FeaturedVideoIcon from '@mui/icons-material/FeaturedVideo';
 import useVideoProcessor from '../utils/useVideoProcessor';
 
 interface Step2RecordProps {
@@ -355,31 +356,31 @@ export default function Step2Record({ onComplete, onBack }: Step2RecordProps) {
 
         {/* 右侧：视频录制区域 */}
         <Box sx={{ 
-          bgcolor: '#f5f5f5', 
-          borderRadius: 1,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'relative',
-          height: '100%'
+          flex: 1, 
+          width: '100%', 
+          display: 'flex', 
+          flexDirection: 'column'
         }}>
-          <Box sx={{ 
-            p: 2, 
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            gap: 2
-          }}>
+          <Paper 
+            sx={{ 
+              p: 3, 
+              mb: 3, 
+              borderRadius: 2,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <FeaturedVideoIcon color="primary" /> 视频录制
+            </Typography>
             <Box sx={{ 
-              flex: 1,
-              minHeight: '200px',
-              bgcolor: '#f0f0f0', 
-              borderRadius: 1, 
+              width: '100%', 
               position: 'relative', 
+              mb: 2, 
               display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              overflow: 'hidden'
+              justifyContent: 'center',
+              flex: 1 
             }}>
               <video 
                 ref={videoRef} 
@@ -387,7 +388,14 @@ export default function Step2Record({ onComplete, onBack }: Step2RecordProps) {
                 playsInline
                 muted={!recordedVideo}
                 controls={!!recordedVideo}
-                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '4px' }} 
+                style={{ 
+                  width: '100%', 
+                  maxHeight: '350px', 
+                  objectFit: videoRef.current && videoRef.current.videoWidth && videoRef.current.videoHeight && 
+                           videoRef.current.videoWidth < videoRef.current.videoHeight 
+                           ? 'contain' : 'cover',
+                  borderRadius: '8px' 
+                }} 
               />
               {isRecording && (
                 <Box 
@@ -505,7 +513,7 @@ export default function Step2Record({ onComplete, onBack }: Step2RecordProps) {
                 )}
               </Box>
             )}
-          </Box>
+          </Paper>
         </Box>
       </Box>
     </Box>

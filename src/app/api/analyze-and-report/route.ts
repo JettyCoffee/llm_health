@@ -140,6 +140,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const video = formData.get('video') as File;
+    const userFeedback = formData.get('userFeedback') as string || '';
     
     if (!video) {
       return NextResponse.json(
@@ -149,6 +150,7 @@ export async function POST(request: Request) {
     }
 
     console.log('收到视频文件:', video.name, video.type, `${(video.size / (1024 * 1024)).toFixed(2)}MB`);
+    console.log('收到用户反馈:', userFeedback ? '是' : '否');
 
     // 检查视频格式
     if (!video.type.includes('mp4') && !video.name.toLowerCase().endsWith('.mp4')) {
@@ -171,7 +173,7 @@ export async function POST(request: Request) {
 
     // 第二步：生成心理分析报告
     console.log('开始生成心理分析报告...');
-    const finalReport = await generatePsychologicalReport(analysisData);
+    const finalReport = await generatePsychologicalReport(analysisData, userFeedback);
     console.log('心理分析报告生成完成');
 
     // 第三步：将最终报告保存到数据库
@@ -299,9 +301,10 @@ async function analyzeVideo(video: File): Promise<AnalysisData> {
 }
 
 // 心理分析报告生成函数
-async function generatePsychologicalReport(analysisData: AnalysisData): Promise<PsychologicalReport> {
+async function generatePsychologicalReport(analysisData: AnalysisData, userFeedback: string = ''): Promise<PsychologicalReport> {
   try {
     console.log('开始调用第二个LLM生成心理分析报告...');
+    console.log('用户反馈文字长度:', userFeedback.length);
     
     // 调用Claude API生成心理分析报告
     const response = await fetch('https://api.mjdjourney.cn/v1/chat/completions', {
@@ -364,7 +367,11 @@ async function generatePsychologicalReport(analysisData: AnalysisData): Promise<
           },
           {
             role: 'user',
-            content: `基于以下视频分析结果，请生成一份详尽的用户心理分析报告，主语均为“你”而不是“用户”：\n\n${JSON.stringify(analysisData)}`
+            content: `基于以下视频分析结果${userFeedback ? '和用户自述' : ''}，请生成一份详尽的用户心理分析报告，主语均为"你"而不是"用户"：
+
+${JSON.stringify(analysisData)}
+
+${userFeedback ? `\n\n用户的自述反馈文字：\n${userFeedback}` : ''}`
           }
         ]
       })

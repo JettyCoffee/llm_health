@@ -163,7 +163,7 @@ export default function Home() {
                 letterSpacing: '1px'
               }}>
               <TypewriterText 
-                text="基于大模型的多模态心理智能分析" 
+                text="MindGuide" 
                 speed={0.04}
                 cursor={false}
               />
@@ -188,7 +188,7 @@ export default function Home() {
                 lineHeight: 1.5,
                 textShadow: '0px 2px 4px rgba(0, 0, 0, 0.5)'
               }}>
-              您的贴心心理健康管家，多模态AI分析，专业心理评估与疏导
+              基于大模型的多模态心理智能分析系统，您的贴心心理健康管家
             </Typography>
           </motion.div>
           

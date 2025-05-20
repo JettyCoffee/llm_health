@@ -12,7 +12,7 @@ import VideocamIcon from '@mui/icons-material/Videocam';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Step1Consent from './components/Step1Consent';
 import Step2Record from './components/Step2Record';
-import Step3Preview from './components/Step3Preview';
+import Step3Review from './components/Step3Review';
 import { analyzeData } from './utils/analyzeData';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -115,9 +115,9 @@ function QontoStepIcon(props: StepIconProps) {
 }
 
 const steps = [
-  '数据采集说明',
-  '录制视频',
-  '确认数据'
+  '采集说明',
+  '视频录制',
+  '状态自述'
 ];
 
 interface ReportResult {
@@ -131,6 +131,7 @@ export default function AnalysisPage() {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [recordedVideo, setRecordedVideo] = useState<File | null>(null);
+  const [userFeedback, setUserFeedback] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeStatus, setAnalyzeStatus] = useState<string>('等待中');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -167,10 +168,13 @@ export default function AnalysisPage() {
     setActiveStep(1);
   };
 
-  const handleStep3Complete = async () => {
+  const handleStep3Complete = async (feedback: string) => {
     if (!recordedVideo) {
       return;
     }
+    
+    // 保存用户输入的反馈
+    setUserFeedback(feedback);
 
     setIsAnalyzing(true);
     setAnalyzeStatus('正在分析视频并生成心理分析报告...');
@@ -178,7 +182,8 @@ export default function AnalysisPage() {
     try {
       // 一次性完成视频分析和报告生成
       const result = await analyzeData({
-        video: recordedVideo
+        video: recordedVideo,
+        userFeedback: feedback
       });
       setAnalysisResult(result);
       console.log('分析和报告结果:', result);
@@ -218,7 +223,7 @@ export default function AnalysisPage() {
       case 2:
         return recordedVideo ? (
           <PopIn>
-            <Step3Preview
+            <Step3Review
               video={recordedVideo}
               onRestart={handleStep3Restart}
               onConfirm={handleStep3Complete}

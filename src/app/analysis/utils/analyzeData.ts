@@ -1,5 +1,6 @@
 interface AnalysisData {
   video: File;
+  userFeedback?: string; // 用户输入的烦恼和自述
 }
 
 // 添加分析结果的接口定义
@@ -91,6 +92,11 @@ export async function analyzeData(data: AnalysisData): Promise<AnalysisResult> {
   try {
     const formData = new FormData();
     formData.append('video', data.video);
+    
+    // 添加用户自述文本
+    if (data.userFeedback) {
+      formData.append('userFeedback', data.userFeedback);
+    }
 
     // 使用新的合并API路由
     const response = await fetch('/api/analyze-and-report', {
