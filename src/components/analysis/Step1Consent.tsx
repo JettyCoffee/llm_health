@@ -28,21 +28,34 @@ export default function Step1Consent({ onAgree }: Step1ConsentProps) {
             在最后一步您还可以填写您自己对自己情绪状态的描述
           </Typography>        </Typography>
       </Box>
+      
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          隐私保护声明：
+        </Typography>
+        <Typography component="div">
+          <Typography variant="body1">
+            我们高度重视您的隐私安全，请放心使用本系统：
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            • 所有数据仅用于本次情绪分析，不会用于其他目的
+            • 分析完成后，您可以选择删除所有原始采集数据
+            • 我们采用加密技术保护您的数据传输和存储安全
+            • 分析报告仅供您个人查看，不会与任何第三方共享
+          </Typography>
+        </Typography>
+      </Box>
 
-      <Alert severity="success" sx={{ mb: 3, '& .MuiAlert-message': { width: '100%' } }}>
-        所有录制的数据仅用于本次情绪分析研究，不会被永久存储或用于其他用途。您的隐私安全是我们的首要考虑。
-      </Alert>
-
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-        <Button
-          variant="contained"
-          color="primary"
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Button 
+          variant="contained" 
+          color="primary" 
           size="large"
           onClick={onAgree}
         >
-          我同意并开始数据采集
+          我已了解并同意开始
         </Button>
       </Box>
     </Box>
   );
-} 
+}

@@ -1,35 +1,18 @@
+// 引入共享类型
+import { AnalysisData as ApiAnalysisData } from '@/lib/api/types';
+
 interface AnalysisData {
   video: File;
   userFeedback?: string; // 用户输入的烦恼和自述
 }
 
-// 添加分析结果的接口定义
-export interface AnalysisResult {
+// 导出分析结果接口
+export interface AnalysisResult extends ApiAnalysisData {
   id?: number;
   time?: number;
+  // 兼容现有业务逻辑的必要属性
   analysisTitle?: string;
   analysisDateTime?: string;
-  overallSummary?: {
-    generalReadingStyle?: string;
-    mostProminentFacialCueOverall?: string;
-    mostProminentVocalCueOverall?: string;
-    [key: string]: unknown;
-  };
-  segmentedAnalysis?: Array<{
-    segmentIndex?: number;
-    textSegment?: string;
-    startTimeSec?: number | null;
-    endTimeSec?: number | null;
-    facialObservations?: Record<string, unknown>;
-    vocalObservations?: Record<string, unknown>;
-    congruenceAssessment?: string;
-    potentialInterpretationSegment?: string;
-    [key: string]: unknown;
-  }>;
-  crossSegmentPatterns?: Record<string, unknown>;
-  analysisDisclaimer?: string;
-  error?: string;
-  rawContent?: string;
   [key: string]: unknown;
 }
 
@@ -98,7 +81,7 @@ export async function analyzeData(data: AnalysisData): Promise<AnalysisResult> {
       formData.append('userFeedback', data.userFeedback);
     }
 
-    // 使用新的合并API路由
+    // 调用统一的 API 端点
     const response = await fetch('/api/analyze-and-report', {
       method: 'POST',
       body: formData,
@@ -106,20 +89,91 @@ export async function analyzeData(data: AnalysisData): Promise<AnalysisResult> {
 
     const result = await response.json();
     
-    if (!response.ok) {
+    if (!response.ok || !result.success) {
       throw new Error(result.error || '分析请求失败');
     }
 
+    // 提取数据结构以与前端兼容
     return {
-      id: result.reportId,
-      time: result.reportId,
-      ...result.report,
+      id: result.data.reportId,
+      time: Date.now(),
+      ...result.data.analysisResult
     } as AnalysisResult;
   } catch (error) {
-    console.error('Analysis error:', error);
+    console.error('分析错误:', error);
     if (error instanceof Error) {
       throw error;
     }
     throw new Error('数据分析失败，请稍后重试');
   }
-} 
+}
+
+/**
+ * 使用异步API分析数据
+ * 这个版本不会等待分析完成，而是返回一个任务ID
+ * 客户端可以使用这个ID轮询任务状态
+ */
+export async function analyzeDataAsync(data: AnalysisData): Promise<{ taskId: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('video', data.video);
+    
+    if (data.userFeedback) {
+      formData.append('userFeedback', data.userFeedback);
+    }
+
+    // 调用异步API端点
+    const response = await fetch('/api/async-analysis', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || '创建分析任务失败');
+    }
+
+    return { 
+      taskId: result.data.taskId 
+    };
+  } catch (error) {
+    console.error('创建异步分析任务错误:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('创建分析任务失败，请稍后重试');
+  }
+}
+
+/**
+ * 获取异步任务的状态
+ */
+export async function getAnalysisTaskStatus(taskId: string): Promise<{
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result?: AnalysisResult;
+  error?: string;
+}> {
+  try {
+    const response = await fetch(`/api/async-analysis?taskId=${taskId}`);
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || '获取任务状态失败');
+    }
+
+    return {
+      status: result.data.status,
+      progress: result.data.progress,
+      result: result.data.result as AnalysisResult,
+      error: result.data.error
+    };
+  } catch (error) {
+    console.error('获取任务状态错误:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('获取任务状态失败，请稍后重试');
+  }
+}

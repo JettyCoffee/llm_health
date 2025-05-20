@@ -37,8 +37,8 @@ import {
   GradientBackground,
   TypewriterText,
   extendedAnimationStyles
-} from '@/components/AnimationComponents';
-import ToolbarSpacer from '@/components/ToolbarSpacer';
+} from '@/components/ui/AnimationComponents';
+import ToolbarSpacer from '@/components/layout/ToolbarSpacer';
 
 export default function Home() {
   const router = useRouter();

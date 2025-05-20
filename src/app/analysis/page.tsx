@@ -10,9 +10,10 @@ import CheckIcon from '@mui/icons-material/Check';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import Step1Consent from './components/Step1Consent';
-import Step2Record from './components/Step2Record';
-import Step3Review from './components/Step3Review';
+// 更新导入路径到新组件位置
+import Step1Consent from '@/components/analysis/Step1Consent';
+import Step2Record from '@/components/analysis/Step2Record';
+import Step3Review from '@/components/analysis/Step3Review';
 import { analyzeData } from './utils/analyzeData';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -20,11 +21,9 @@ import Cookies from 'js-cookie';
 import { 
   PageTransition, 
   FadeIn, 
-  SlideUp, 
-  AnimatedBackground,
-  PopIn
-} from '@/components/Animations';
-import ToolbarSpacer from '@/components/ToolbarSpacer';
+  SlideUp
+} from '@/components/ui/Animations';
+import ToolbarSpacer from '@/components/layout/ToolbarSpacer';
 
 // 导入AnalysisResult类型
 import type { AnalysisResult } from './utils/analyzeData';
@@ -168,25 +167,19 @@ export default function AnalysisPage() {
     setActiveStep(1);
   };
 
-  const handleStep3Complete = async (feedback: string) => {
-    if (!recordedVideo) {
+  const handleStep3Complete = async (result: AnalysisResult | null) => {
+    if (!recordedVideo || !result) {
       return;
     }
     
-    // 保存用户输入的反馈
-    setUserFeedback(feedback);
-
+    setAnalysisResult(result);
     setIsAnalyzing(true);
-    setAnalyzeStatus('正在分析视频并生成心理分析报告...');
+    setAnalyzeStatus('准备生成报告...');
     
     try {
       // 一次性完成视频分析和报告生成
-      const result = await analyzeData({
-        video: recordedVideo,
-        userFeedback: feedback
-      });
-      setAnalysisResult(result);
-      console.log('分析和报告结果:', result);
+      // 直接使用已有的分析结果，不需要再次调用analyzeData
+      console.log('分析结果:', result);
       
       setAnalyzeStatus('分析完成，准备跳转到报告页面...');
       setAnalyzingProgress(100);
@@ -222,13 +215,13 @@ export default function AnalysisPage() {
         return <SlideUp><Step2Record onComplete={handleStep2Complete} onBack={() => setActiveStep(0)} /></SlideUp>;
       case 2:
         return recordedVideo ? (
-          <PopIn>
+          <FadeIn>
             <Step3Review
               video={recordedVideo}
-              onRestart={handleStep3Restart}
-              onConfirm={handleStep3Complete}
+              onBack={handleStep3Restart}
+              onComplete={handleStep3Complete}
             />
-          </PopIn>
+          </FadeIn>
         ) : null;
       default:
         return null;
@@ -237,7 +230,7 @@ export default function AnalysisPage() {
 
   return (
     <PageTransition>
-      <AnimatedBackground>
+      <div className="main-container">
         <ToolbarSpacer />
         <Container 
           maxWidth="lg"
@@ -322,7 +315,7 @@ export default function AnalysisPage() {
                       justifyContent: 'center',
                       zIndex: 9999
                     }}>
-                      <PopIn>
+                      <FadeIn>
                         <Paper 
                           elevation={24}
                           sx={{ 
@@ -378,14 +371,14 @@ export default function AnalysisPage() {
                             <div className="dot"></div>
                           </Box>
                         </Paper>
-                      </PopIn>
+                      </FadeIn>
                     </Box>
                   </motion.div>
                 )}
               </Paper>
             </FadeIn>
           </Container>
-      </AnimatedBackground>
+      </div>
     </PageTransition>
   );
 } 

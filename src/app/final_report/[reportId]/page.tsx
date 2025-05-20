@@ -86,38 +86,35 @@ export default function FinalReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
-    useEffect(() => {
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');    useEffect(() => {
     const fetchReport = async () => {
       try {
-        const response = await fetch(`/api/analysis/latest?time=${reportId}`);
+        // 使用重构后的 API 端点获取报告
+        const response = await fetch(`/api/export-report?reportId=${reportId}`);
         if (!response.ok) {
           throw new Error('获取报告失败');
         }
         
-        const data = await response.json();
+        const responseData = await response.json();
         
         // 将当前报告URL保存到cookie
         const currentUrl = `/final_report/${reportId}`;
         Cookies.set('lastReportUrl', currentUrl, { expires: 30 }); // 保存30天
         
-        // 解析最终报告数据
-        if (data && data.result) {
-          const resultData = JSON.parse(data.result);
-          if (resultData.type === 'final_report' && resultData.report) {
-            // 尝试将报告数据格式化为标准格式
-            try {
-              const standardReport = normalizeReportData(resultData.report);
-              setReport(standardReport);
-            } catch (formatError) {
-              console.error('报告格式化失败:', formatError);
-              setError('报告格式化失败');
-            }
-          } else {
-            setError('报告格式错误');
+        // 检查 API 响应结构
+        if (responseData.success && responseData.data) {
+          const reportData = responseData.data;
+          
+          // 尝试将报告数据格式化为标准格式
+          try {
+            const standardReport = normalizeReportData(reportData.psychologicalReport);
+            setReport(standardReport);
+          } catch (formatError) {
+            console.error('报告格式化失败:', formatError);
+            setError('报告格式化失败');
           }
         } else {
-          setError('未找到报告数据');
+          setError(responseData.error || '未找到报告数据');
         }
       } catch (error) {
         console.error('加载报告失败:', error);

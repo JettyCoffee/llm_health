@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import OpenAI from "openai";
 import { Stream } from 'openai/streaming';
+import { successResponse, errorResponse, MAX_VIDEO_SIZE } from '@/lib/api/utils';
+import { AnalysisData as ApiAnalysisData } from '@/lib/api/types';
 
 // 视频分析数据类型
 interface AnalysisData {
@@ -133,9 +135,6 @@ interface LlmResponse {
   }>;
 }
 
-// 最大允许的视频大小 (10MB)
-const MAX_VIDEO_SIZE = 10 * 1024 * 1024;
-
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -143,30 +142,19 @@ export async function POST(request: Request) {
     const userFeedback = formData.get('userFeedback') as string || '';
     
     if (!video) {
-      return NextResponse.json(
-        { error: '没有接收到视频数据' },
-        { status: 400 }
-      );
+      return errorResponse('没有接收到视频数据', 400);
     }
 
     console.log('收到视频文件:', video.name, video.type, `${(video.size / (1024 * 1024)).toFixed(2)}MB`);
-    console.log('收到用户反馈:', userFeedback ? '是' : '否');
-
-    // 检查视频格式
+    console.log('收到用户反馈:', userFeedback ? '是' : '否');    // 检查视频格式
     if (!video.type.includes('mp4') && !video.name.toLowerCase().endsWith('.mp4')) {
-      return NextResponse.json(
-        { error: '请提供MP4格式的视频文件' },
-        { status: 400 }
-      );
+      return errorResponse('请提供MP4格式的视频文件', 400);
     }
 
     // 检查视频大小
     if (video.size > MAX_VIDEO_SIZE) {
-      return NextResponse.json(
-        { error: `视频文件太大，请限制在 ${Math.floor(MAX_VIDEO_SIZE / (1024 * 1024))}MB 以内` },
-        { status: 400 }
-      );
-    }    // 第一步：视频分析
+      return errorResponse(`视频文件太大，请限制在 ${Math.floor(MAX_VIDEO_SIZE / (1024 * 1024))}MB 以内`, 400);
+    }// 第一步：视频分析
     console.log('开始分析视频...');
     const analysisData = await analyzeVideo(video);
     console.log('视频分析完成');
@@ -180,10 +168,8 @@ export async function POST(request: Request) {
     console.log('开始保存心理分析报告到数据库...');
     const reportTime = Math.floor(Date.now() / 1000);
     const reportId = await saveReportToDatabase('admin', reportTime, analysisData, finalReport);
-    console.log('心理分析报告保存完成，ID:', reportId);
-      // 返回成功结果
-    return NextResponse.json({
-      success: true,
+    console.log('心理分析报告保存完成，ID:', reportId);    // 返回成功结果
+    return successResponse({
       reportId: reportTime,
       time: reportTime,  // 添加time字段以确保与前端期望的格式一致
       id: reportTime,    // 添加id字段以确保与前端期望的格式一致
@@ -192,10 +178,7 @@ export async function POST(request: Request) {
     
   } catch (error) {
     console.error('完整分析流程错误:', error);
-    return NextResponse.json(
-      { error: '分析失败', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    return errorResponse('分析失败: ' + (error instanceof Error ? error.message : String(error)), 500);
   }
 }
 

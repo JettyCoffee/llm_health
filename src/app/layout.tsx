@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import theme from '@/theme/theme';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/layout/Navbar';
 
 const inter = Inter({ subsets: ['latin'] });
 

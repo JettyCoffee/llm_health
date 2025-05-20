@@ -6,13 +6,13 @@ import CssBaseline from '@mui/material/CssBaseline';
 import createEmotionCache from '../lib/createEmotionCache';
 import theme from '../theme/theme';
 import dynamic from 'next/dynamic';
-import ToolbarSpacer from '@/components/ToolbarSpacer';
+import ToolbarSpacer from '@/components/layout/ToolbarSpacer';
 
 // 创建客户端缓存，在客户端共享
 const clientSideEmotionCache = createEmotionCache();
 
 // 动态导入需要用到的组件
-const NavbarWithNoSSR = dynamic(() => import('../components/Navbar'), { ssr: false });
+const NavbarWithNoSSR = dynamic(() => import('../components/layout/Navbar'), { ssr: false });
 
 export interface MyAppProps extends AppProps {
   emotionCache?: EmotionCache;

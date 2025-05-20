@@ -1,26 +1,20 @@
 import { NextResponse } from 'next/server';
-import { getLatestAnalysis } from '@/lib/supabase-client';
+import { getLatestAnalysis } from '@/lib/api/services/dataRetrieval';
+import { successResponse, errorResponse } from '@/lib/api/utils';
 
+/**
+ * 获取最新分析结果的 API 端点
+ */
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId') || 'admin';
-    
-    const latestResult = await getLatestAnalysis(userId);
+    const latestResult = await getLatestAnalysis();
     
     if (!latestResult) {
-      return NextResponse.json(
-        { error: '数据库中没有分析结果' },
-        { status: 404 }
-      );
+      return errorResponse('数据库中没有分析结果', 404);
     }
     
-    return NextResponse.json(latestResult);
-  } catch (error) {
+    return successResponse(latestResult);  } catch (error: any) {
     console.error('获取分析结果错误:', error);
-    return NextResponse.json(
-      { error: '获取分析结果失败', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    return errorResponse(`获取最新分析结果失败: ${error.message || '未知错误'}`, 500);
   }
-} 
+}
